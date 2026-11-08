@@ -424,11 +424,51 @@ const adminServer = http.createServer(async (req, res) => {
   }
 });
 
-// Start Servers
-userServer.listen(USER_PORT, () => {
-  console.log(`[GrowWise User Web App] running at: http://localhost:${USER_PORT}`);
-});
+// Start Servers (Local standalone execution)
+if (process.env.VERCEL !== '1') {
+  userServer.listen(USER_PORT, () => {
+    console.log(`[GrowWise User Web App] running at: http://localhost:${USER_PORT}`);
+  });
 
-adminServer.listen(ADMIN_PORT, () => {
-  console.log(`[GrowWise Admin Web App] running at: http://localhost:${ADMIN_PORT}`);
-});
+  adminServer.listen(ADMIN_PORT, () => {
+    console.log(`[GrowWise Admin Web App] running at: http://localhost:${ADMIN_PORT}`);
+  });
+}
+
+// Export unified request handler for Vercel Serverless Function
+module.exports = async (req, res) => {
+  const parsedUrl = url.parse(req.url, true);
+  const pathname = parsedUrl.pathname;
+
+  // 1. API Endpoints
+  if (pathname.startsWith('/api/')) {
+    try {
+      const handled = await handleApiRequest(req, res, pathname, parsedUrl.query);
+      if (handled) return;
+    } catch (err) {
+      console.error('[API Error: Vercel]', pathname, err);
+      sendJson(res, 500, { error: err.message || 'Internal Server Error' });
+      return;
+    }
+  }
+
+  // 2. Admin Portal Route (/admin)
+  if (pathname === '/admin' || pathname.startsWith('/admin/')) {
+    const adminHtmlPath = path.join(__dirname, 'apps', 'admin-web', 'index.html');
+    if (fs.existsSync(adminHtmlPath)) {
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      fs.createReadStream(adminHtmlPath).pipe(res);
+      return;
+    }
+  }
+
+  // 3. User Web App Route (Default /)
+  const userHtmlPath = path.join(__dirname, 'apps', 'user-web', 'index.html');
+  if (fs.existsSync(userHtmlPath)) {
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    fs.createReadStream(userHtmlPath).pipe(res);
+  } else {
+    res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('GrowWise Platform on Vercel');
+  }
+};

@@ -245,8 +245,8 @@
 
         <!-- Link to Admin Portal -->
         <div class="pt-3 border-t border-gray-100 text-center">
-          <a href="http://localhost:3001" target="_blank" class="text-xs text-slate-500 hover:text-brand-purple transition inline-flex items-center gap-1.5">
-            <span>สำหรับเจ้าหน้าที่หรือแพทย์ผู้เชี่ยวชาญ เข้าสู่ระบบที่ GrowWise Admin (Port 3001)</span>
+          <a id="link-to-admin-portal" href="/admin" target="_blank" class="text-xs text-slate-500 hover:text-brand-purple transition inline-flex items-center gap-1.5">
+            <span>สำหรับเจ้าหน้าที่หรือแพทย์ผู้เชี่ยวชาญ เข้าสู่ระบบที่ GrowWise Admin</span>
             <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
           </a>
         </div>
@@ -937,6 +937,19 @@
     // Initialize App
     async function init() {
       initSupabase();
+
+      // Adapt Admin link depending on environment (Vercel vs Localhost)
+      const adminLink = document.getElementById('link-to-admin-portal');
+      if (adminLink) {
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+          adminLink.href = 'http://localhost:3001';
+          adminLink.innerHTML = `<span>สำหรับเจ้าหน้าที่หรือแพทย์ผู้เชี่ยวชาญ เข้าสู่ระบบที่ GrowWise Admin (Port 3001)</span><i data-lucide="external-link" class="w-3.5 h-3.5"></i>`;
+        } else {
+          adminLink.href = '/admin';
+          adminLink.innerHTML = `<span>สำหรับเจ้าหน้าที่หรือแพทย์ผู้เชี่ยวชาญ เข้าสู่ระบบที่ GrowWise Admin</span><i data-lucide="external-link" class="w-3.5 h-3.5"></i>`;
+        }
+      }
+
       const savedUser = localStorage.getItem('growwise_user_email');
       if (savedUser) {
         try {

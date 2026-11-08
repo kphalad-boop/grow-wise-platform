@@ -231,7 +231,7 @@
         </button>
         <span class="nav-tooltip" id="sidebar-tooltip-role">Super Admin (คลิกเพื่อออกจากระบบ)</span>
       </div>
-      <a href="http://localhost:3000" target="_blank" id="sidebar-userapp-link" class="group relative w-full bg-brand-purple hover:bg-brand-light text-white py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition shadow">
+      <a href="/" target="_blank" id="sidebar-userapp-link" class="group relative w-full bg-brand-purple hover:bg-brand-light text-white py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition shadow">
         <span class="sidebar-label">เปิด GrowWise User App</span>
         <i data-lucide="external-link" class="w-3.5 h-3.5 flex-shrink-0"></i>
         <span class="nav-tooltip">เปิด GrowWise User App</span>
@@ -1066,9 +1066,9 @@
 
       <!-- Switch to User Web App -->
       <div class="pt-3 border-t border-slate-800 text-center">
-        <a href="http://localhost:3000" class="text-xs text-brand-light hover:text-white transition inline-flex items-center gap-1.5">
+        <a id="login-switch-userapp-link" href="/" class="text-xs text-brand-light hover:text-white transition inline-flex items-center gap-1.5">
           <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
-          <span>สำหรับผู้ปกครองและคุณครู ไปที่ GrowWise User Web App (Port 3000)</span>
+          <span>สำหรับผู้ปกครองและคุณครู ไปที่ GrowWise User Web App</span>
         </a>
       </div>
 
@@ -1839,6 +1839,14 @@
     }
 
     async function initAdmin() {
+      // Adapt User Web App links based on environment (Vercel vs Localhost)
+      const userLink = document.getElementById('sidebar-userapp-link');
+      const loginUserLink = document.getElementById('login-switch-userapp-link');
+      const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      const targetUserHref = isLocal ? 'http://localhost:3000' : '/';
+      if (userLink) userLink.href = targetUserHref;
+      if (loginUserLink) loginUserLink.href = targetUserHref;
+
       try {
         if (localStorage.getItem('admin_sidebar_collapsed') === 'true') {
           isSidebarCollapsed = true;
