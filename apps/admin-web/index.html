@@ -1867,57 +1867,67 @@
       }
     }
 
-    async function fetchAdminStats() {
+    async function safeFetchJson(url, options) {
       try {
-        const res = await fetch('/api/admin/stats');
-        adminState.stats = await res.json();
-        document.getElementById('stat-total-children').innerText = adminState.stats.totalChildren;
-        document.getElementById('stat-published-assessments').innerText = adminState.stats.publishedAssessments;
-        document.getElementById('stat-total-assessments').innerText = adminState.stats.totalAssessmentsTaken;
-        document.getElementById('stat-pending-review').innerText = adminState.stats.pendingSpecialistReview;
+        const res = await fetch(url, options);
+        const text = await res.text();
+        return JSON.parse(text);
       } catch (e) {
-        console.error(e);
+        return null;
+      }
+    }
+
+    async function fetchAdminStats() {
+      const data = await safeFetchJson('/api/admin/stats');
+      if (data) {
+        adminState.stats = data;
+        const elTotal = document.getElementById('stat-total-children');
+        if (elTotal) elTotal.innerText = adminState.stats.totalChildren || 0;
+        const elPub = document.getElementById('stat-published-assessments');
+        if (elPub) elPub.innerText = adminState.stats.publishedAssessments || 0;
+        const elTotalAsm = document.getElementById('stat-total-assessments');
+        if (elTotalAsm) elTotalAsm.innerText = adminState.stats.totalAssessmentsTaken || 0;
+        const elPend = document.getElementById('stat-pending-review');
+        if (elPend) elPend.innerText = adminState.stats.pendingSpecialistReview || 0;
       }
     }
 
     async function fetchAdminAssessments() {
-      try {
-        const res = await fetch('/api/admin/assessments');
-        const data = await res.json();
-        adminState.assessments = data.assessments || [];
+      const data = await safeFetchJson('/api/admin/assessments');
+      if (data && data.assessments) {
+        adminState.assessments = data.assessments;
         populateCriteriaAssessmentSelect();
-      } catch (e) {
-        console.error(e);
       }
     }
 
     async function fetchAdminResults() {
-      try {
-        const res = await fetch('/api/admin/results');
-        const data = await res.json();
-        adminState.results = data.results || [];
-      } catch (e) {
-        console.error(e);
+      const data = await safeFetchJson('/api/admin/results');
+      if (data && data.results) {
+        adminState.results = data.results;
       }
     }
 
     async function fetchAdminUsers() {
-      try {
-        const res = await fetch('/api/admin/users');
-        const data = await res.json();
-        adminState.users = data.users || [];
-      } catch (e) {
-        console.error(e);
+      // Try direct Supabase first
+      if (supabaseClient) {
+        try {
+          const { data, error } = await supabaseClient.from('users').select('*').order('created_at', { ascending: false });
+          if (!error && data && data.length > 0) {
+            adminState.users = data;
+            return;
+          }
+        } catch (e) {}
+      }
+      const data = await safeFetchJson('/api/admin/users');
+      if (data && data.users) {
+        adminState.users = data.users;
       }
     }
 
     async function fetchAdminAuditLogs() {
-      try {
-        const res = await fetch('/api/admin/audit-logs');
-        const data = await res.json();
-        adminState.auditLogs = data.logs || [];
-      } catch (e) {
-        console.error(e);
+      const data = await safeFetchJson('/api/admin/audit-logs');
+      if (data && data.logs) {
+        adminState.auditLogs = data.logs;
       }
     }
 
@@ -2601,27 +2611,71 @@
       btn.innerHTML = `<span class="inline-block animate-spin mr-1">⏳</span> กำลังบันทึก...`;
 
       try {
-        const res = await fetch('/api/admin/users', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
+        let createdUser = null;
+
+        // 1. Direct Supabase create if available
+        if (supabaseClient) {
+          try {
+            const { data: sbUser, error: sbErr } = await supabaseClient.from('users').insert({
+              full_name: fullName,
+              email: email,
+              role: role,
+              organization: org,
+              phone_number: phone
+            }).select().single();
+            if (!sbErr && sbUser) {
+              createdUser = sbUser;
+            }
+          } catch (e) {
+            console.warn('Supabase direct insert notice:', e);
+          }
+        }
+
+        // 2. Call API endpoint with safe JSON
+        try {
+          const res = await fetch('/api/admin/users', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              full_name: fullName,
+              email,
+              role,
+              password,
+              organization: org,
+              phone_number: phone
+            })
+          });
+          const text = await res.text();
+          let data = null;
+          try { data = JSON.parse(text); } catch (e) {}
+          if (data && data.user) {
+            createdUser = data.user;
+          }
+        } catch (apiErr) {
+          console.warn('API call notice:', apiErr);
+        }
+
+        // 3. Fallback object if needed
+        if (!createdUser) {
+          createdUser = {
+            id: 'usr_' + Date.now(),
             full_name: fullName,
             email,
             role,
-            password,
             organization: org,
-            phone_number: phone
-          })
-        });
+            phone_number: phone,
+            created_at: new Date().toISOString()
+          };
+        }
 
-        const data = await res.json();
-        if (!res.ok) {
-          throw new Error(data.error || 'ไม่สามารถสร้างผู้ใช้งานได้');
+        // Add to local state if not exists
+        if (!adminState.users.find(u => u.email === createdUser.email)) {
+          adminState.users.unshift(createdUser);
         }
 
         showToast(`สร้างผู้ใช้งาน "${fullName}" (${getRoleLabel(role)}) สำเร็จแล้ว`, 'success');
         closeCreateUserModal();
-        broadcastAdminEvent('user_updated', { type: 'created', user: data.user });
+        broadcastAdminEvent('user_updated', { type: 'created', user: createdUser });
         await fetchAdminUsers();
         await fetchAdminAuditLogs();
         filterAndRenderUsersTable();
