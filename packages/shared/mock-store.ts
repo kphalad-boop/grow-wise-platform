@@ -39,83 +39,17 @@ export class MockDataStore implements IDataAdapter {
   }
 
   private initSeedData() {
-    // 1. Initial Profiles
-    this.profiles = [
-      {
-        id: 'usr_super_admin',
-        role: 'super_admin',
-        full_name: 'Super Administrator',
-        email: 'admin@growwise.internal',
-        phone_number: '081-000-0001',
-        organization: 'GrowWise System Core',
-        created_at: '2026-11-01T00:00:00Z',
-        updated_at: '2026-11-01T00:00:00Z',
-      },
-      {
-        id: 'usr_admin',
-        role: 'admin',
-        full_name: 'คุณพัชรา วิศวกรระบบ (Admin)',
-        email: 'patchara@growwise.local',
-        phone_number: '081-111-2222',
-        organization: 'สำนักงานพัฒนาระบบสุขภาพ',
-        created_at: '2026-11-01T00:00:00Z',
-        updated_at: '2026-11-01T00:00:00Z',
-      },
-      {
-        id: 'usr_dr_somchai',
-        role: 'specialist',
-        full_name: 'นพ. สมชาย เกียรติวิทยา (จิตแพทย์เด็ก)',
-        email: 'somchai.md@hospital.local',
-        phone_number: '082-345-6789',
-        organization: 'สถาบันพัฒนาการเด็ก',
-        created_at: '2026-11-01T00:00:00Z',
-        updated_at: '2026-11-01T00:00:00Z',
-      },
-      {
-        id: 'usr_teacher_nipa',
-        role: 'teacher',
-        full_name: 'ครู นิภา วงศ์สว่าง (ครูประจำชั้น ป.2)',
-        email: 'kru.nipa@school.ac.th',
-        phone_number: '089-876-5432',
-        organization: 'โรงเรียนสาธิตพัฒนาการ',
-        created_at: '2026-11-01T00:00:00Z',
-        updated_at: '2026-11-01T00:00:00Z',
-      },
-      {
-        id: 'usr_parent_dao',
-        role: 'parent',
-        full_name: 'คุณแม่ ดาวเรือง ใจดี (ผู้ปกครอง)',
-        email: 'dao.jaidee@gmail.com',
-        phone_number: '085-555-1234',
-        created_at: '2026-11-01T00:00:00Z',
-        updated_at: '2026-11-01T00:00:00Z',
-      },
-    ];
-
-    // Clean Production State (No Test/Mock Children or Sample Results)
+    // Clean Production State — All mock data removed
+    this.profiles = [];
     this.children = [];
     this.grants = [];
     this.responses = [];
     this.results = [];
+    this.auditLogs = [];
 
     // Official Clinical Screening Instruments (5 Verified KUS-SI Scales)
     this.assessments = [...ALL_INITIAL_ASSESSMENTS];
     this.versions = [...ALL_INITIAL_VERSIONS];
-
-    // Clean Production Audit Logs
-    this.auditLogs = [
-      {
-        id: 'log_init_system',
-        user_id: 'usr_super_admin',
-        user_name: 'Super Administrator',
-        user_role: 'super_admin',
-        action: 'SYSTEM_INITIALIZED',
-        target_resource: 'KUS-SI Rating Scales (1-5)',
-        details: { version: 1, note: 'เริ่มต้นระบบพร้อมชุดแบบคัดกรองมาตรฐาน 5 ชุดสำหรับใช้งานจริง' },
-        ip_address: '127.0.0.1',
-        created_at: '2026-11-01T00:00:00Z',
-      },
-    ];
   }
 
   // --- Auth & Profiles ---

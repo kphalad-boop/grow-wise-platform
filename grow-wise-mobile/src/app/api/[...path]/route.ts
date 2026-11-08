@@ -5,7 +5,6 @@ const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://qjocagwfza
 const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_7VCW1PGILyI3mDx7Yikycg_QId8b5Ri';
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// In-memory persistent state across warm invocations
 interface User {
   id: string;
   full_name: string;
@@ -16,44 +15,9 @@ interface User {
   created_at: string;
 }
 
-let usersStore: User[] = [
-  {
-    id: 'usr_super_admin',
-    full_name: 'ผู้ดูแลระบบหลัก',
-    email: 'admin@growwise.com',
-    role: 'super_admin',
-    organization: 'GrowWise HQ',
-    phone_number: '0945239965',
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: 'usr_specialist_1',
-    full_name: 'พญ. พัฒนาพร มีสุข',
-    email: 'dr.pattanaporn@growwise.com',
-    role: 'specialist',
-    organization: 'สถาบันพัฒนาการเด็ก',
-    phone_number: '0812345678',
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: 'usr_teacher_1',
-    full_name: 'ครูสมศรี ใจดี',
-    email: 'somsri@school.ac.th',
-    role: 'teacher',
-    organization: 'โรงเรียนสาธิต',
-    phone_number: '0898765432',
-    created_at: new Date().toISOString(),
-  },
-];
-
-let auditLogs: any[] = [
-  {
-    id: 'log_init',
-    action: 'SYSTEM_BOOT',
-    details: 'GrowWise System Initialized with Supabase Realtime',
-    timestamp: new Date().toISOString(),
-  },
-];
+// Clean Production State — No Mock Data
+let usersStore: User[] = [];
+let auditLogs: any[] = [];
 
 async function getPath(params: Promise<{ path: string[] }> | { path: string[] }) {
   const resolved = await params;
@@ -79,23 +43,37 @@ export async function GET(
   }
 
   if (pathname === '/admin/stats') {
+    let totalChildren = 0;
+    let publishedAssessments = 0;
+    let totalAssessmentsTaken = 0;
+    let pendingSpecialistReview = 0;
+
+    try {
+      const { count: chCount } = await supabase.from('children').select('*', { count: 'exact', head: true });
+      totalChildren = chCount || 0;
+      const { count: asCount } = await supabase.from('assessments').select('*', { count: 'exact', head: true }).eq('status', 'published');
+      publishedAssessments = asCount || 0;
+      const { count: subCount } = await supabase.from('submissions').select('*', { count: 'exact', head: true });
+      totalAssessmentsTaken = subCount || 0;
+      const { count: rvCount } = await supabase.from('submissions').select('*', { count: 'exact', head: true }).eq('overall_status', 'pending_specialist_review');
+      pendingSpecialistReview = rvCount || 0;
+    } catch (e) {}
+
     return NextResponse.json({
-      totalChildren: 12,
-      totalAssessments: 5,
-      publishedAssessments: 3,
-      pendingSpecialistReview: 1,
+      totalChildren,
+      publishedAssessments,
+      totalAssessmentsTaken,
+      pendingSpecialistReview,
     });
   }
 
   if (pathname === '/admin/users') {
     try {
       const { data, error } = await supabase.from('users').select('*').order('created_at', { ascending: false });
-      if (!error && data && data.length > 0) {
+      if (!error && data) {
         return NextResponse.json({ users: data });
       }
-    } catch (e) {
-      // Fallback to in-memory
-    }
+    } catch (e) {}
     return NextResponse.json({ users: usersStore });
   }
 
@@ -198,6 +176,9 @@ export async function POST(
   if (pathname.startsWith('/admin/users/') && pathname.endsWith('/delete')) {
     const userId = pathname.split('/')[3];
     usersStore = usersStore.filter((u) => u.id !== userId);
+    try {
+      await supabase.from('users').delete().eq('id', userId);
+    } catch (e) {}
     return NextResponse.json({ success: true, message: 'ลบผู้ใช้งานสำเร็จ' });
   }
 
@@ -207,6 +188,9 @@ export async function POST(
     if (user) {
       user.role = body.role;
     }
+    try {
+      await supabase.from('users').update({ role: body.role }).eq('id', body.user_id);
+    } catch (e) {}
     return NextResponse.json({ user, message: 'เปลี่ยนสิทธิ์สำเร็จ' });
   }
 

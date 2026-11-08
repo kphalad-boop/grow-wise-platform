@@ -2065,7 +2065,7 @@
       const list = itemsToRender || adminState.results;
 
       if (!list || list.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-slate-400">ไม่พบรายการผลประเมินที่ตรงกับเงื่อนไขการค้นหา</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-slate-400">ยังไม่มีรายการผลประเมินในระบบ</td></tr>`;
         return;
       }
 
@@ -2510,7 +2510,7 @@
           <tr>
             <td colspan="6" class="p-8 text-center text-slate-400">
               <i data-lucide="user-x" class="w-8 h-8 mx-auto mb-2 text-slate-300"></i>
-              <p class="font-medium">ไม่พบผู้ใช้งานในหมวดนี้ หรือไม่ตรงกับเงื่อนไขการค้นหา</p>
+              <p class="font-medium">${users.length === 0 ? 'ยังไม่มีข้อมูลผู้ใช้งานในระบบ (กดปุ่ม "เพิ่มผู้ใช้งานใหม่" เพื่อสร้างบัญชีแรก)' : 'ไม่พบผู้ใช้งานในหมวดนี้ หรือไม่ตรงกับเงื่อนไขการค้นหา'}</p>
             </td>
           </tr>
         `;
@@ -2948,13 +2948,18 @@
 
     function renderAuditTable() {
       const tbody = document.getElementById('admin-audit-table');
+      if (!tbody) return;
+      if (!adminState.auditLogs || adminState.auditLogs.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-slate-400">ยังไม่มีบันทึก Audit Log ในระบบ</td></tr>`;
+        return;
+      }
       tbody.innerHTML = adminState.auditLogs.map(l => `
         <tr class="hover:bg-slate-50 transition text-[11px]">
-          <td class="p-4 text-slate-500">${l.created_at}</td>
-          <td class="p-4 font-sans font-semibold text-slate-800">${l.user_name} (${l.user_role})</td>
-          <td class="p-4 font-bold text-brand-purple">${l.action}</td>
-          <td class="p-4 text-slate-600">${l.target_resource}</td>
-          <td class="p-4 text-slate-400">${l.ip_address}</td>
+          <td class="p-4 text-slate-500">${l.created_at || '-'}</td>
+          <td class="p-4 font-sans font-semibold text-slate-800">${l.user_name || '-'} (${l.user_role || '-'})</td>
+          <td class="p-4 font-bold text-brand-purple">${l.action || '-'}</td>
+          <td class="p-4 text-slate-600">${l.target_resource || '-'}</td>
+          <td class="p-4 text-slate-400">${l.ip_address || '-'}</td>
         </tr>
       `).join('');
     }
