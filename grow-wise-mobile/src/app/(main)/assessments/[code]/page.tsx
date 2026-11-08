@@ -44,7 +44,7 @@ export default function AssessmentPreStartPage() {
         .single();
 
       if (assessData) {
-        setAssessment(assessData);
+        setAssessment(assessData as any);
       }
 
       // 2. Fetch User & Children

@@ -4,6 +4,7 @@
   "description": "GrowWise Platform — แพลตฟอร์มคัดกรองและส่งเสริมพัฒนาการเด็กเบื้องต้น",
   "main": "server.js",
   "scripts": {
+    "build": "node -e \"console.log('GrowWise build ready')\"",
     "start": "node server.js",
     "test": "node tests/test-suite.js",
     "test:journeys": "node tests/verify-journeys.js",

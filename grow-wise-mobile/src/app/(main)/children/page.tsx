@@ -38,7 +38,7 @@ export default function ChildrenPage() {
       .order('created_at', { ascending: false });
 
     if (data) {
-      setChildren(data);
+      setChildren(data as unknown as Child[]);
     }
     setIsLoading(false);
   };

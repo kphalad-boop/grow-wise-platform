@@ -40,10 +40,11 @@ export default function HomePage() {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (data && data.length > 0) {
-        setChildren(data);
-        setActiveChild(data[0]);
-        setChildAge(calculateChildAge(data[0].birth_date));
+      if (data && (data as any[]).length > 0) {
+        const list = data as unknown as Child[];
+        setChildren(list);
+        setActiveChild(list[0]);
+        setChildAge(calculateChildAge(list[0].birth_date));
       }
       setIsLoading(false);
     }
