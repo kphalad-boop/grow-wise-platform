@@ -141,3 +141,93 @@ VALUES
     ('asm_kus_si_5', 'KUS-SI 5', 'แบบคัดกรองบุคคลที่มีความบกพร่องทางสติปัญญาและพัฒนาการล่าช้า (Intellectual / DSPM Extended)', 'คัดกรองทักษะการปรับตัว ความสามารถทางสติปัญญาและพัฒนาการสมวัย ช่วงอายุ 6-12 ปี', 72, 155, ARRAY['parent', 'teacher'], 'published', 1),
     ('asm_snap_iv', 'SNAP-IV', 'แบบประเมินพฤติกรรมสมาธิสั้น SNAP-IV (26 ข้อ)', 'แบบประเมินมาตรฐานพฤติกรรมสมาธิสั้น ซนอยู่ไม่นิ่ง และพฤติกรรมดื้อต่อต้าน', 60, 216, ARRAY['parent', 'teacher', 'specialist'], 'published', 1)
 ON CONFLICT (code) DO NOTHING;
+
+-- 6. SNAP-IV VERSION 1 (26 ITEMS & 3 CLINICAL DOMAINS)
+INSERT INTO public.assessment_versions (
+    assessment_id,
+    version_number,
+    published_at,
+    schema_definition,
+    rules_definition
+) VALUES (
+    'asm_snap_iv',
+    1,
+    timezone('utc'::text, now()),
+    '{
+        "scale": [
+            {"value": 0, "label": "ไม่เลย"},
+            {"value": 1, "label": "เล็กน้อย"},
+            {"value": 2, "label": "ค่อนข้างมาก"},
+            {"value": 3, "label": "มาก"}
+        ],
+        "sections": [
+            {"id": "inattentive", "title": "ขาดสมาธิ (Inattention)", "order": 1, "item_ids": ["q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8", "q9"]},
+            {"id": "hyperactivity", "title": "ซน/วู่วาม (Hyperactive)", "order": 2, "item_ids": ["q10", "q11", "q12", "q13", "q14", "q15", "q16", "q17", "q18"]},
+            {"id": "oppositional", "title": "ดื้อ/ต่อต้าน (Oppositional)", "order": 3, "item_ids": ["q19", "q20", "q21", "q22", "q23", "q24", "q25", "q26"]}
+        ],
+        "items": [
+            {"id": "q1", "section_id": "inattentive", "number": 1, "text": "มักไม่ละเอียดรอบคอบหรือสะเพร่าในการทำงานต่างๆ เช่น การบ้าน", "question_type": "single_choice", "max_score": 3, "reverse_scored": false},
+            {"id": "q2", "section_id": "inattentive", "number": 2, "text": "ทำอะไรนานๆ ไม่ได้", "question_type": "single_choice", "max_score": 3, "reverse_scored": false},
+            {"id": "q3", "section_id": "inattentive", "number": 3, "text": "ดูเหมือนไม่ค่อยฟังเวลาที่มีคนพูดด้วย", "question_type": "single_choice", "max_score": 3, "reverse_scored": false},
+            {"id": "q4", "section_id": "inattentive", "number": 4, "text": "มักทำการบ้านไม่เสร็จ หรือทำงานที่ได้รับมอบหมายไม่สำเร็จ", "question_type": "single_choice", "max_score": 3, "reverse_scored": false},
+            {"id": "q5", "section_id": "inattentive", "number": 5, "text": "จัดระเบียบงานและกิจกรรมต่างๆ ไม่เป็น", "question_type": "single_choice", "max_score": 3, "reverse_scored": false},
+            {"id": "q6", "section_id": "inattentive", "number": 6, "text": "มักหลีกเลี่ยงกิจกรรมที่ต้องใช้ความอดทนในการทำให้สำเร็จ", "question_type": "single_choice", "max_score": 3, "reverse_scored": false},
+            {"id": "q7", "section_id": "inattentive", "number": 7, "text": "ทำของหายบ่อยๆ (เช่น ของเล่น สมุดจดงาน เครื่องเขียน)", "question_type": "single_choice", "max_score": 3, "reverse_scored": false},
+            {"id": "q8", "section_id": "inattentive", "number": 8, "text": "วอกแวกง่าย", "question_type": "single_choice", "max_score": 3, "reverse_scored": false},
+            {"id": "q9", "section_id": "inattentive", "number": 9, "text": "ขี้ลืม", "question_type": "single_choice", "max_score": 3, "reverse_scored": false},
+            {"id": "q10", "section_id": "hyperactivity", "number": 10, "text": "มือเท้ายุกยิก นั่งบิดไปมา", "question_type": "single_choice", "max_score": 3, "reverse_scored": false},
+            {"id": "q11", "section_id": "hyperactivity", "number": 11, "text": "นั่งไม่ติดที่ ชอบลุกจากที่นั่งในชั้นเรียน หรือจากที่ที่ควรจะนั่งเรียบร้อย", "question_type": "single_choice", "max_score": 3, "reverse_scored": false},
+            {"id": "q12", "section_id": "hyperactivity", "number": 12, "text": "วิ่งหรือปีนป่ายมากเกินควรอย่างไม่รู้กาลเทศะ", "question_type": "single_choice", "max_score": 3, "reverse_scored": false},
+            {"id": "q13", "section_id": "hyperactivity", "number": 13, "text": "เล่นหรือทำกิจกรรมเงียบๆ ไม่เป็น", "question_type": "single_choice", "max_score": 3, "reverse_scored": false},
+            {"id": "q14", "section_id": "hyperactivity", "number": 14, "text": "พร้อมจะเคลื่อนไหวอยู่เสมอเหมือนติดเครื่องอยู่ตลอดเวลา", "question_type": "single_choice", "max_score": 3, "reverse_scored": false},
+            {"id": "q15", "section_id": "hyperactivity", "number": 15, "text": "พูดมาก", "question_type": "single_choice", "max_score": 3, "reverse_scored": false},
+            {"id": "q16", "section_id": "hyperactivity", "number": 16, "text": "มักโพล่งคำตอบออกมาก่อนจะฟังคำถามจบ", "question_type": "single_choice", "max_score": 3, "reverse_scored": false},
+            {"id": "q17", "section_id": "hyperactivity", "number": 17, "text": "ไม่ชอบรอคิว", "question_type": "single_choice", "max_score": 3, "reverse_scored": false},
+            {"id": "q18", "section_id": "hyperactivity", "number": 18, "text": "ชอบสอดแทรกผู้อื่น เช่น ชอบพูดแทรกขณะผู้ใหญ่กำลังสนทนากัน", "question_type": "single_choice", "max_score": 3, "reverse_scored": false},
+            {"id": "q19", "section_id": "oppositional", "number": 19, "text": "อารมณ์เสียง่าย", "question_type": "single_choice", "max_score": 3, "reverse_scored": false},
+            {"id": "q20", "section_id": "oppositional", "number": 20, "text": "ชอบโต้เถียงกับผู้ใหญ่", "question_type": "single_choice", "max_score": 3, "reverse_scored": false},
+            {"id": "q21", "section_id": "oppositional", "number": 21, "text": "ไม่ยอมทำตามสิ่งที่ผู้ใหญ่สั่งหรือวางกฎเกณฑ์ไว้", "question_type": "single_choice", "max_score": 3, "reverse_scored": false},
+            {"id": "q22", "section_id": "oppositional", "number": 22, "text": "จงใจก่อกวนผู้อื่น", "question_type": "single_choice", "max_score": 3, "reverse_scored": false},
+            {"id": "q23", "section_id": "oppositional", "number": 23, "text": "มักตำหนิผู้อื่นในสิ่งที่ตนเองทำผิด", "question_type": "single_choice", "max_score": 3, "reverse_scored": false},
+            {"id": "q24", "section_id": "oppositional", "number": 24, "text": "ขี้รำคาญ", "question_type": "single_choice", "max_score": 3, "reverse_scored": false},
+            {"id": "q25", "section_id": "oppositional", "number": 25, "text": "โกรธหรือบึ้งตึงเป็นประจำ", "question_type": "single_choice", "max_score": 3, "reverse_scored": false},
+            {"id": "q26", "section_id": "oppositional", "number": 26, "text": "เจ้าคิดเจ้าแค้น", "question_type": "single_choice", "max_score": 3, "reverse_scored": false}
+        ]
+    }'::jsonb,
+    '{
+        "cutoff_mode": "domain",
+        "scoring_method": "domain_sum",
+        "domains": [
+            {
+                "domain_id": "inattentive",
+                "title_th": "ขาดสมาธิ (Inattention)",
+                "item_ids": ["q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8", "q9"],
+                "max_possible_raw_score": 27,
+                "cutoffs": [
+                    {"min_score": 0, "max_score": 15, "result_level": "normal", "title_th": "ปกติ", "description_th": "ไม่พบความเสี่ยง"},
+                    {"min_score": 16, "max_score": 27, "result_level": "clinical_alert", "title_th": "มีความเสี่ยง", "description_th": "มีความเสี่ยงต่อภาวะขาดสมาธิ"}
+                ]
+            },
+            {
+                "domain_id": "hyperactivity",
+                "title_th": "ซน/วู่วาม (Hyperactive)",
+                "item_ids": ["q10", "q11", "q12", "q13", "q14", "q15", "q16", "q17", "q18"],
+                "max_possible_raw_score": 27,
+                "cutoffs": [
+                    {"min_score": 0, "max_score": 12, "result_level": "normal", "title_th": "ปกติ", "description_th": "ไม่พบความเสี่ยง"},
+                    {"min_score": 13, "max_score": 27, "result_level": "clinical_alert", "title_th": "มีความเสี่ยง", "description_th": "มีความเสี่ยงต่อภาวะซน/วู่วาม"}
+                ]
+            },
+            {
+                "domain_id": "oppositional",
+                "title_th": "ดื้อ/ต่อต้าน (Oppositional)",
+                "item_ids": ["q19", "q20", "q21", "q22", "q23", "q24", "q25", "q26"],
+                "max_possible_raw_score": 24,
+                "cutoffs": [
+                    {"min_score": 0, "max_score": 12, "result_level": "normal", "title_th": "ปกติ", "description_th": "ไม่พบความเสี่ยง"},
+                    {"min_score": 13, "max_score": 24, "result_level": "clinical_alert", "title_th": "มีความเสี่ยง", "description_th": "มีความเสี่ยงต่อภาวะดื้อ/ต่อต้าน"}
+                ]
+            }
+        ]
+    }'::jsonb
+) ON CONFLICT DO NOTHING;

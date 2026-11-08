@@ -679,14 +679,16 @@
                 </div>
               </div>
 
-              <!-- Domain Summary Grid (ผลสรุปแยกรายหัวข้อ) -->
+              <!-- Domain Summary Grid (ผลสรุปแยกรายหัวข้อ) matching Image 4 -->
               <div class="pt-3 border-t border-slate-800 space-y-2">
-                <div class="text-[11px] font-bold text-slate-400 flex items-center gap-1.5">
-                  <i data-lucide="layers" class="w-3.5 h-3.5 text-purple-400"></i>
-                  <span>สรุปผลการแปลผลแยกรายหัวข้อ (Domain Evaluation Breakdown):</span>
-                </div>
-                <div id="bench-domain-results-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                  <!-- Dynamically populated -->
+                <div class="p-4 rounded-2xl bg-[#fcfaf6] border border-amber-200/90 shadow-xs space-y-3">
+                  <div class="text-sm font-bold text-amber-900 flex items-center justify-between">
+                    <span id="bench-domain-summary-heading">แบบประเมินคะแนน: SNAP-IV</span>
+                    <span class="text-[11px] font-semibold text-amber-800 bg-amber-100 px-2.5 py-0.5 rounded-full">สรุปผลเป็นรายหัวข้อ</span>
+                  </div>
+                  <div id="bench-domain-results-grid" class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                    <!-- Dynamically populated 3 cards matching Image 4 -->
+                  </div>
                 </div>
               </div>
 
@@ -946,6 +948,11 @@
           <div class="text-xs font-bold text-slate-800 mt-1" id="modal-case-respondent">-</div>
           <span class="text-[10px] text-slate-400" id="modal-case-date">-</span>
         </div>
+      </div>
+
+      <!-- Domain Breakdown Section matching Image 4 -->
+      <div id="modal-case-domain-summary" class="hidden">
+        <!-- Dynamically populated 3 cards matching Image 4 -->
       </div>
 
       <!-- Itemized Answers Section -->
@@ -1478,16 +1485,18 @@
   </div>
 
   <!-- MODAL: ASSESSMENT EDIT (แก้ไขข้อมูลแบบประเมิน) -->
-  <div id="assessment-edit-modal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto custom-scroll">
-      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+  <!-- MODAL: ASSESSMENT FULL EDITOR (แก้ไขแบบประเมินและรายละเอียดข้อคำถามทุกข้อ) -->
+  <div id="assessment-edit-modal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5">
+    <div class="bg-white rounded-3xl max-w-4xl w-full p-6 sm:p-8 shadow-2xl space-y-5 max-h-[92vh] flex flex-col custom-scroll">
+      <!-- Top header bar -->
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3 flex-shrink-0">
         <div class="flex items-center gap-3">
           <div class="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center flex-shrink-0">
             <i data-lucide="edit-3" class="w-5 h-5"></i>
           </div>
           <div>
-            <h3 class="text-base font-bold text-slate-800">แก้ไขข้อมูลแบบประเมิน</h3>
-            <p id="edit-asm-subtitle" class="text-xs text-slate-400">ปรับปรุงข้อมูลทั่วไป ช่วงอายุ และสิทธิ์ผู้ตอบ</p>
+            <h3 class="text-base font-bold text-slate-800">แก้ไขแบบประเมินและรายละเอียดข้อคำถาม</h3>
+            <p id="edit-asm-subtitle" class="text-xs text-slate-400">แก้ไขข้อความคำถาม ตัวเลือก คะแนน หมวด/Section และเกณฑ์การประเมินทุกข้อ</p>
           </div>
         </div>
         <button onclick="closeAssessmentEditModal()" class="text-slate-400 hover:text-slate-600 p-2 rounded-xl hover:bg-slate-50 transition">
@@ -1495,63 +1504,112 @@
         </button>
       </div>
 
-      <form onsubmit="handleSaveAssessmentEdit(event)" class="space-y-4 text-xs">
+      <!-- Navigation Tabs -->
+      <div class="flex items-center gap-2 border-b border-slate-200 pb-2 text-xs font-bold flex-shrink-0">
+        <button type="button" id="edit-tab-btn-questions" onclick="switchEditModalTab('questions')" class="px-4 py-2 rounded-xl bg-brand-purple text-white shadow-xs flex items-center gap-2 transition">
+          <i data-lucide="list-checks" class="w-4 h-4"></i>
+          <span>แก้ไขรายละเอียดข้อคำถาม</span>
+          <span id="edit-modal-q-badge" class="px-2 py-0.5 rounded-full text-[10px] bg-white/20 text-white font-mono">26 ข้อ</span>
+        </button>
+        <button type="button" id="edit-tab-btn-general" onclick="switchEditModalTab('general')" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 flex items-center gap-2 transition">
+          <i data-lucide="settings" class="w-4 h-4"></i>
+          <span>ข้อมูลทั่วไปและสิทธิ์ผู้ตอบ</span>
+        </button>
+      </div>
+
+      <!-- Form Container -->
+      <form onsubmit="handleSaveAssessmentEdit(event)" class="space-y-4 text-xs flex-1 flex flex-col overflow-hidden">
         <input type="hidden" id="edit-asm-id">
-        <div>
-          <label class="block font-medium text-slate-700 mb-1">รหัสแบบประเมิน (Code)</label>
-          <input type="text" id="edit-asm-code" readonly class="w-full bg-slate-100 border border-slate-300 rounded-xl px-3 py-2 text-slate-500 font-mono">
-        </div>
-        <div>
-          <label class="block font-medium text-slate-700 mb-1">ชื่อแบบประเมิน <span class="text-rose-500">*</span></label>
-          <input type="text" id="edit-asm-title" required class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 focus:ring-brand-purple">
-        </div>
-        <div>
-          <label class="block font-medium text-slate-700 mb-1">คำอธิบายและวัตถุประสงค์</label>
-          <textarea id="edit-asm-desc" rows="3" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 focus:ring-brand-purple"></textarea>
-        </div>
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block font-medium text-slate-700 mb-1">อายุต่ำสุด (เดือน)</label>
-            <input type="number" id="edit-asm-min-age" required class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2">
+
+        <!-- TAB 1: QUESTIONS LIST & EDIT (ACTIVE BY DEFAULT) -->
+        <div id="edit-modal-tab-questions" class="space-y-3 flex-1 flex flex-col overflow-hidden">
+          <div class="flex items-center justify-between bg-slate-50 p-3 rounded-2xl border border-slate-200 flex-shrink-0 flex-wrap gap-2">
+            <div class="text-xs text-slate-600">
+              <span class="font-bold text-slate-800">รายการข้อคำถามทั้งหมด:</span> ท่านสามารถแก้ไขข้อความคำถาม หมวด/Section และคะแนนตัวเลือกได้โดยตรง
+            </div>
+            <div class="flex items-center gap-2">
+              <button type="button" onclick="addQuestionToEditModal()" class="px-3 py-1.5 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-700 hover:bg-indigo-100 font-bold text-xs inline-flex items-center gap-1.5 transition">
+                <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
+                <span>เพิ่มข้อคำถาม</span>
+              </button>
+              <button type="button" onclick="openCurrentAssessmentInBuilder()" class="px-3 py-1.5 rounded-xl bg-purple-50 border border-purple-200 text-brand-purple hover:bg-purple-100 font-bold text-xs inline-flex items-center gap-1.5 transition">
+                <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+                <span>เปิดแก้ไขในตัวสร้างแบบเต็มจอ</span>
+              </button>
+            </div>
           </div>
-          <div>
-            <label class="block font-medium text-slate-700 mb-1">อายุสูงสุด (เดือน)</label>
-            <input type="number" id="edit-asm-max-age" required class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2">
+
+          <!-- Scrollable questions list container -->
+          <div id="edit-modal-questions-container" class="flex-1 overflow-y-auto space-y-3 pr-1 custom-scroll max-h-[52vh]">
+            <!-- Dynamically populated questions list -->
           </div>
-        </div>
-        <div>
-          <label class="block font-medium text-slate-700 mb-1.5">บทบาทที่มีสิทธิ์ทำแบบประเมิน</label>
-          <div class="grid grid-cols-3 gap-2">
-            <label class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 cursor-pointer">
-              <input type="checkbox" id="edit-role-parent" value="parent" class="rounded text-brand-purple">
-              <span>ผู้ปกครอง</span>
-            </label>
-            <label class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 cursor-pointer">
-              <input type="checkbox" id="edit-role-teacher" value="teacher" class="rounded text-brand-purple">
-              <span>คุณครู</span>
-            </label>
-            <label class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 cursor-pointer">
-              <input type="checkbox" id="edit-role-specialist" value="specialist" class="rounded text-brand-purple">
-              <span>ผู้เชี่ยวชาญ</span>
-            </label>
-          </div>
-        </div>
-        <div>
-          <label class="block font-medium text-slate-700 mb-1">สถานะแบบประเมิน</label>
-          <select id="edit-asm-status" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2">
-            <option value="published">เผยแพร่แล้ว (Published)</option>
-            <option value="draft">ฉบับร่าง (Draft)</option>
-            <option value="archived">ปิดใช้งาน / เก็บถาวร (Archived)</option>
-          </select>
         </div>
 
-        <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
-          <button type="button" onclick="closeAssessmentEditModal()" class="px-4 py-2 rounded-xl border border-slate-300 text-slate-600 hover:bg-slate-50">
-            ยกเลิก
-          </button>
-          <button type="submit" id="btn-save-edit-asm" class="px-5 py-2 rounded-xl bg-brand-purple hover:bg-brand-dark text-white font-semibold shadow-md transition">
-            บันทึกการแก้ไข
-          </button>
+        <!-- TAB 2: GENERAL SETTINGS -->
+        <div id="edit-modal-tab-general" class="hidden space-y-4 overflow-y-auto max-h-[52vh] pr-1">
+          <div>
+            <label class="block font-medium text-slate-700 mb-1">รหัสแบบประเมิน (Code)</label>
+            <input type="text" id="edit-asm-code" readonly class="w-full bg-slate-100 border border-slate-300 rounded-xl px-3 py-2 text-slate-500 font-mono">
+          </div>
+          <div>
+            <label class="block font-medium text-slate-700 mb-1">ชื่อแบบประเมิน <span class="text-rose-500">*</span></label>
+            <input type="text" id="edit-asm-title" required class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 focus:ring-brand-purple">
+          </div>
+          <div>
+            <label class="block font-medium text-slate-700 mb-1">คำอธิบายและวัตถุประสงค์</label>
+            <textarea id="edit-asm-desc" rows="3" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 focus:ring-brand-purple"></textarea>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block font-medium text-slate-700 mb-1">อายุต่ำสุด (เดือน)</label>
+              <input type="number" id="edit-asm-min-age" required class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2">
+            </div>
+            <div>
+              <label class="block font-medium text-slate-700 mb-1">อายุสูงสุด (เดือน)</label>
+              <input type="number" id="edit-asm-max-age" required class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2">
+            </div>
+          </div>
+          <div>
+            <label class="block font-medium text-slate-700 mb-1.5">บทบาทที่มีสิทธิ์ทำแบบประเมิน</label>
+            <div class="grid grid-cols-3 gap-2">
+              <label class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 cursor-pointer">
+                <input type="checkbox" id="edit-role-parent" value="parent" class="rounded text-brand-purple">
+                <span>ผู้ปกครอง</span>
+              </label>
+              <label class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 cursor-pointer">
+                <input type="checkbox" id="edit-role-teacher" value="teacher" class="rounded text-brand-purple">
+                <span>คุณครู</span>
+              </label>
+              <label class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 cursor-pointer">
+                <input type="checkbox" id="edit-role-specialist" value="specialist" class="rounded text-brand-purple">
+                <span>ผู้เชี่ยวชาญ</span>
+              </label>
+            </div>
+          </div>
+          <div>
+            <label class="block font-medium text-slate-700 mb-1">สถานะแบบประเมิน</label>
+            <select id="edit-asm-status" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2">
+              <option value="published">เผยแพร่แล้ว (Published)</option>
+              <option value="draft">ฉบับร่าง (Draft)</option>
+              <option value="archived">ปิดใช้งาน / เก็บถาวร (Archived)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Bottom action footer -->
+        <div class="flex items-center justify-between pt-4 border-t border-slate-100 flex-shrink-0">
+          <div class="text-slate-500 text-xs font-medium">
+            <span id="edit-modal-summary-text">มีทั้งหมด 26 ข้อคำถาม</span>
+          </div>
+          <div class="flex items-center gap-3">
+            <button type="button" onclick="closeAssessmentEditModal()" class="px-4 py-2 rounded-xl border border-slate-300 text-slate-600 hover:bg-slate-50">
+              ยกเลิก
+            </button>
+            <button type="submit" id="btn-save-edit-asm" class="px-5 py-2 rounded-xl bg-brand-purple hover:bg-brand-dark text-white font-semibold shadow-md transition inline-flex items-center gap-1.5">
+              <i data-lucide="check" class="w-4 h-4"></i>
+              <span>บันทึกการแก้ไขทั้งหมด</span>
+            </button>
+          </div>
         </div>
       </form>
     </div>
@@ -2038,9 +2096,9 @@
               <i data-lucide="download" class="w-3.5 h-3.5 text-slate-500"></i>
               <span>ส่งออก</span>
             </button>
-            <button onclick="openAssessmentEditModal('${a.id}')" class="px-2.5 py-1.5 rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 text-[11px] font-semibold inline-flex items-center gap-1 transition shadow-sm" title="แก้ไขข้อมูลแบบประเมิน">
-              <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
-              <span>แก้ไข</span>
+            <button onclick="openAssessmentEditModal('${a.id}')" class="px-2.5 py-1.5 rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 text-[11px] font-semibold inline-flex items-center gap-1 transition shadow-sm" title="แก้ไขแบบประเมินและรายละเอียดข้อคำถามทุกข้อ">
+              <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+              <span>แก้ไขข้อคำถาม</span>
             </button>
             <button onclick="openAssessmentDeleteModal('${a.id}', '${a.code}', '${(a.title || '').replace(/'/g, "\\'")}')" class="px-2.5 py-1.5 rounded-lg border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 text-[11px] font-semibold inline-flex items-center gap-1 transition shadow-sm" title="ลบแบบประเมิน">
               <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
@@ -2227,6 +2285,48 @@
       document.getElementById('modal-case-status').innerText = item.result.overall_status_label || 'รอผู้เชี่ยวชาญตรวจและแปลผล';
       document.getElementById('modal-case-respondent').innerText = `บทบาท: ${item.response.respondent_role}`;
       document.getElementById('modal-case-date').innerText = `ประเมินเมื่อ: ${item.response.assessment_date}`;
+
+      // Domain breakdown matching Image 4
+      const domainSummaryEl = document.getElementById('modal-case-domain-summary');
+      if (domainSummaryEl) {
+        const domainResults = (item.result && item.result.domain_results) || [];
+        if (domainResults.length > 0) {
+          domainSummaryEl.classList.remove('hidden');
+          domainSummaryEl.innerHTML = `
+            <div class="bg-[#fcfaf6] p-4 sm:p-5 rounded-2xl border border-amber-200/90 shadow-xs space-y-3">
+              <div class="text-sm font-bold text-amber-900 flex items-center justify-between">
+                <span>แบบประเมินคะแนน: ${item.result.assessment_code || 'SNAP-IV'}</span>
+                <span class="text-[11px] font-semibold text-amber-800 bg-amber-100 px-2.5 py-0.5 rounded-full">สรุปผลเป็นรายหัวข้อ</span>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                ${domainResults.map(d => {
+                  const isRisk = d.status_badge && (d.status_badge.includes('เสี่ยง') || d.is_elevated || d.level === 'high');
+                  const isMod = d.status_badge && (d.status_badge.includes('เฝ้าระวัง') || d.level === 'mod');
+                  const badgeClass = isRisk
+                    ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                    : isMod
+                    ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                    : 'bg-slate-100 text-slate-700 border border-slate-200';
+                  const labelText = isRisk ? 'มีความเสี่ยง' : isMod ? 'เฝ้าระวัง' : 'ปกติ';
+
+                  return `
+                    <div class="bg-white p-3.5 rounded-xl border border-amber-100 shadow-2xs space-y-2 text-slate-800">
+                      <div class="font-bold text-slate-800 text-xs sm:text-sm truncate">${d.title_th}</div>
+                      <div class="text-xs text-slate-600 font-medium">คะแนนรวม: <span class="font-bold text-slate-900">${d.raw_score}</span></div>
+                      <div class="flex items-center gap-1.5 text-xs text-slate-600 pt-0.5">
+                        <span>แปลผล:</span>
+                        <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold ${badgeClass}">${labelText}</span>
+                      </div>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            </div>
+          `;
+        } else {
+          domainSummaryEl.classList.add('hidden');
+        }
+      }
 
       // Populate Clinical Interpretation Form
       document.getElementById('modal-interpret-status').value = item.result.overall_status || 'pending_review';
@@ -3201,7 +3301,67 @@
       }
     }
 
-    function openAssessmentEditModal(assessmentId) {
+    let editModalQuestions = [];
+    let currentEditVersion = null;
+
+    const SNAP_IV_DEFAULT_ITEMS = [
+      { id: "q1", section: "ขาดสมาธิ (Inattention)", number: 1, text: "มักไม่ละเอียดรอบคอบหรือสะเพร่าในการทำงานต่างๆ เช่น การบ้าน", question_type: "single_choice", max_score: 3, reverse_scored: false },
+      { id: "q2", section: "ขาดสมาธิ (Inattention)", number: 2, text: "ทำอะไรนานๆ ไม่ได้", question_type: "single_choice", max_score: 3, reverse_scored: false },
+      { id: "q3", section: "ขาดสมาธิ (Inattention)", number: 3, text: "ดูเหมือนไม่ค่อยฟังเวลาที่มีคนพูดด้วย", question_type: "single_choice", max_score: 3, reverse_scored: false },
+      { id: "q4", section: "ขาดสมาธิ (Inattention)", number: 4, text: "มักทำการบ้านไม่เสร็จ หรือทำงานที่ได้รับมอบหมายไม่สำเร็จ", question_type: "single_choice", max_score: 3, reverse_scored: false },
+      { id: "q5", section: "ขาดสมาธิ (Inattention)", number: 5, text: "จัดระเบียบงานและกิจกรรมต่างๆ ไม่เป็น", question_type: "single_choice", max_score: 3, reverse_scored: false },
+      { id: "q6", section: "ขาดสมาธิ (Inattention)", number: 6, text: "มักหลีกเลี่ยงกิจกรรมที่ต้องใช้ความอดทนในการทำให้สำเร็จ", question_type: "single_choice", max_score: 3, reverse_scored: false },
+      { id: "q7", section: "ขาดสมาธิ (Inattention)", number: 7, text: "ทำของหายบ่อยๆ (เช่น ของเล่น สมุดจดงาน เครื่องเขียน)", question_type: "single_choice", max_score: 3, reverse_scored: false },
+      { id: "q8", section: "ขาดสมาธิ (Inattention)", number: 8, text: "วอกแวกง่าย", question_type: "single_choice", max_score: 3, reverse_scored: false },
+      { id: "q9", section: "ขาดสมาธิ (Inattention)", number: 9, text: "ขี้ลืม", question_type: "single_choice", max_score: 3, reverse_scored: false },
+      { id: "q10", section: "ซน/วู่วาม (Hyperactive)", number: 10, text: "มือเท้ายุกยิก นั่งบิดไปมา", question_type: "single_choice", max_score: 3, reverse_scored: false },
+      { id: "q11", section: "ซน/วู่วาม (Hyperactive)", number: 11, text: "นั่งไม่ติดที่ ชอบลุกจากที่นั่งในชั้นเรียน หรือจากที่ที่ควรจะนั่งเรียบร้อย", question_type: "single_choice", max_score: 3, reverse_scored: false },
+      { id: "q12", section: "ซน/วู่วาม (Hyperactive)", number: 12, text: "วิ่งหรือปีนป่ายมากเกินควรอย่างไม่รู้กาลเทศะ", question_type: "single_choice", max_score: 3, reverse_scored: false },
+      { id: "q13", section: "ซน/วู่วาม (Hyperactive)", number: 13, text: "เล่นหรือทำกิจกรรมเงียบๆ ไม่เป็น", question_type: "single_choice", max_score: 3, reverse_scored: false },
+      { id: "q14", section: "ซน/วู่วาม (Hyperactive)", number: 14, text: "พร้อมจะเคลื่อนไหวอยู่เสมอเหมือนติดเครื่องอยู่ตลอดเวลา", question_type: "single_choice", max_score: 3, reverse_scored: false },
+      { id: "q15", section: "ซน/วู่วาม (Hyperactive)", number: 15, text: "พูดมาก", question_type: "single_choice", max_score: 3, reverse_scored: false },
+      { id: "q16", section: "ซน/วู่วาม (Hyperactive)", number: 16, text: "มักโพล่งคำตอบออกมาก่อนจะฟังคำถามจบ", question_type: "single_choice", max_score: 3, reverse_scored: false },
+      { id: "q17", section: "ซน/วู่วาม (Hyperactive)", number: 17, text: "ไม่ชอบรอคิว", question_type: "single_choice", max_score: 3, reverse_scored: false },
+      { id: "q18", section: "ซน/วู่วาม (Hyperactive)", number: 18, text: "ชอบสอดแทรกผู้อื่น เช่น ชอบพูดแทรกขณะผู้ใหญ่กำลังสนทนากัน", question_type: "single_choice", max_score: 3, reverse_scored: false },
+      { id: "q19", section: "ดื้อ/ต่อต้าน (Oppositional)", number: 19, text: "อารมณ์เสียง่าย", question_type: "single_choice", max_score: 3, reverse_scored: false },
+      { id: "q20", section: "ดื้อ/ต่อต้าน (Oppositional)", number: 20, text: "ชอบโต้เถียงกับผู้ใหญ่", question_type: "single_choice", max_score: 3, reverse_scored: false },
+      { id: "q21", section: "ดื้อ/ต่อต้าน (Oppositional)", number: 21, text: "ไม่ยอมทำตามสิ่งที่ผู้ใหญ่สั่งหรือวางกฎเกณฑ์ไว้", question_type: "single_choice", max_score: 3, reverse_scored: false },
+      { id: "q22", section: "ดื้อ/ต่อต้าน (Oppositional)", number: 22, text: "จงใจก่อกวนผู้อื่น", question_type: "single_choice", max_score: 3, reverse_scored: false },
+      { id: "q23", section: "ดื้อ/ต่อต้าน (Oppositional)", number: 23, text: "มักตำหนิผู้อื่นในสิ่งที่ตนเองทำผิด", question_type: "single_choice", max_score: 3, reverse_scored: false },
+      { id: "q24", section: "ดื้อ/ต่อต้าน (Oppositional)", number: 24, text: "ขี้รำคาญ", question_type: "single_choice", max_score: 3, reverse_scored: false },
+      { id: "q25", section: "ดื้อ/ต่อต้าน (Oppositional)", number: 25, text: "โกรธหรือบึ้งตึงเป็นประจำ", question_type: "single_choice", max_score: 3, reverse_scored: false },
+      { id: "q26", section: "ดื้อ/ต่อต้าน (Oppositional)", number: 26, text: "เจ้าคิดเจ้าแค้น", question_type: "single_choice", max_score: 3, reverse_scored: false }
+    ];
+
+    function switchEditModalTab(tab) {
+      const qTab = document.getElementById('edit-modal-tab-questions');
+      const gTab = document.getElementById('edit-modal-tab-general');
+      const qBtn = document.getElementById('edit-tab-btn-questions');
+      const gBtn = document.getElementById('edit-tab-btn-general');
+
+      if (tab === 'questions') {
+        if (qTab) qTab.classList.remove('hidden');
+        if (gTab) gTab.classList.add('hidden');
+        if (qBtn) {
+          qBtn.className = 'px-4 py-2 rounded-xl bg-brand-purple text-white shadow-xs flex items-center gap-2 transition';
+        }
+        if (gBtn) {
+          gBtn.className = 'px-4 py-2 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 flex items-center gap-2 transition';
+        }
+      } else {
+        if (qTab) qTab.classList.add('hidden');
+        if (gTab) gTab.classList.remove('hidden');
+        if (qBtn) {
+          qBtn.className = 'px-4 py-2 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 flex items-center gap-2 transition';
+        }
+        if (gBtn) {
+          gBtn.className = 'px-4 py-2 rounded-xl bg-brand-purple text-white shadow-xs flex items-center gap-2 transition';
+        }
+      }
+      if (window.lucide) lucide.createIcons();
+    }
+
+    async function openAssessmentEditModal(assessmentId) {
       const asm = adminState.assessments.find(a => a.id === assessmentId);
       if (!asm) return;
       currentEditAssessmentId = assessmentId;
@@ -3219,8 +3379,237 @@
       document.getElementById('edit-role-teacher').checked = roles.includes('teacher');
       document.getElementById('edit-role-specialist').checked = roles.includes('specialist');
 
+      // Fetch version to get full questions list
+      currentEditVersion = null;
+      try {
+        const res = await fetch(`/api/assessments/${asm.id}/version`);
+        const data = await res.json();
+        currentEditVersion = data.version;
+      } catch (e) {
+        console.warn('Error fetching version for edit modal:', e);
+      }
+
+      let items = (currentEditVersion && currentEditVersion.schema_definition && currentEditVersion.schema_definition.items) || [];
+      const sections = (currentEditVersion && currentEditVersion.schema_definition && currentEditVersion.schema_definition.sections) || [];
+      const secMap = {};
+      sections.forEach(s => { secMap[s.id] = s.title; });
+
+      // Fallback for SNAP-IV if version is not populated yet
+      if (items.length === 0 && (asm.code === 'SNAP-IV' || (asm.title && asm.title.includes('SNAP')))) {
+        items = SNAP_IV_DEFAULT_ITEMS;
+      }
+
+      const defaultScale = [
+        { value: 0, label: 'ไม่เลย' },
+        { value: 1, label: 'เล็กน้อย' },
+        { value: 2, label: 'ค่อนข้างมาก' },
+        { value: 3, label: 'มาก' }
+      ];
+
+      editModalQuestions = items.map((it, idx) => {
+        let secTitle = secMap[it.section_id] || it.section || 'หมวดทั่วไป';
+        // Auto-friendly section titles for SNAP-IV
+        if (idx < 9 && (asm.code === 'SNAP-IV' || (asm.title && asm.title.includes('SNAP')))) {
+          secTitle = 'ขาดสมาธิ (Inattention)';
+        } else if (idx < 18 && (asm.code === 'SNAP-IV' || (asm.title && asm.title.includes('SNAP')))) {
+          secTitle = 'ซน/วู่วาม (Hyperactive)';
+        } else if (idx >= 18 && (asm.code === 'SNAP-IV' || (asm.title && asm.title.includes('SNAP')))) {
+          secTitle = 'ดื้อ/ต่อต้าน (Oppositional)';
+        }
+
+        return {
+          id: it.id || `q${idx + 1}`,
+          number: idx + 1,
+          text: it.text || '',
+          section: secTitle,
+          question_type: it.question_type || 'single_choice',
+          options: (it.options && it.options.length > 0) ? JSON.parse(JSON.stringify(it.options)) : JSON.parse(JSON.stringify(defaultScale)),
+          max_score: it.max_score || 3,
+          reverse_scored: !!it.reverse_scored
+        };
+      });
+
+      renderEditModalQuestions();
+      switchEditModalTab('questions');
+
       document.getElementById('assessment-edit-modal').classList.remove('hidden');
-      lucide.createIcons();
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function renderEditModalQuestions() {
+      const container = document.getElementById('edit-modal-questions-container');
+      const badge = document.getElementById('edit-modal-q-badge');
+      const summaryText = document.getElementById('edit-modal-summary-text');
+      if (badge) badge.innerText = `${editModalQuestions.length} ข้อ`;
+      if (summaryText) summaryText.innerText = `มีทั้งหมด ${editModalQuestions.length} ข้อคำถามในแบบประเมินนี้`;
+      if (!container) return;
+
+      if (editModalQuestions.length === 0) {
+        container.innerHTML = `
+          <div class="p-8 bg-slate-50 rounded-2xl border border-dashed border-slate-300 text-center space-y-2">
+            <p class="text-xs text-slate-500">ยังไม่มีข้อคำถามในแบบประเมินนี้</p>
+            <button type="button" onclick="addQuestionToEditModal()" class="px-3 py-1.5 rounded-xl bg-brand-purple text-white font-bold text-xs">
+              + เพิ่มข้อคำถามแรก
+            </button>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = editModalQuestions.map((q, idx) => `
+        <div class="p-4 bg-slate-50/70 rounded-2xl border border-slate-200 hover:border-indigo-300 transition space-y-3 shadow-2xs">
+          <!-- Top Row: Number, Section, Delete -->
+          <div class="flex items-center justify-between gap-2 flex-wrap">
+            <div class="flex items-center gap-2 flex-1 min-w-[240px]">
+              <span class="px-2.5 py-1 bg-brand-purple text-white text-[11px] font-bold rounded-lg flex-shrink-0">
+                ข้อที่ ${idx + 1}
+              </span>
+              <div class="flex items-center gap-1.5 flex-1">
+                <span class="text-[11px] font-bold text-slate-500 whitespace-nowrap">หมวด/ด้าน:</span>
+                <input type="text" value="${escapeHtml(q.section)}" onchange="updateEditQuestionSection(${idx}, this.value)" placeholder="เช่น ขาดสมาธิ (Inattention)" class="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1 text-xs text-slate-800 font-semibold focus:ring-brand-purple">
+              </div>
+            </div>
+            <div class="flex items-center gap-3">
+              <label class="flex items-center gap-1.5 text-[11px] text-slate-600 cursor-pointer">
+                <input type="checkbox" ${q.reverse_scored ? 'checked' : ''} onchange="updateEditQuestionReverse(${idx}, this.checked)" class="rounded text-brand-purple">
+                <span>กลับคะแนน (Reverse)</span>
+              </label>
+              ${editModalQuestions.length > 1 ? `
+                <button type="button" onclick="deleteEditQuestion(${idx})" class="p-1 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition" title="ลบข้อคำถามนี้">
+                  <i data-lucide="trash-2" class="w-4 h-4"></i>
+                </button>
+              ` : ''}
+            </div>
+          </div>
+
+          <!-- Question Text Area -->
+          <div>
+            <label class="block text-[11px] font-medium text-slate-600 mb-1">ข้อความคำถาม / พฤติกรรมที่สังเกต:</label>
+            <textarea rows="2" onchange="updateEditQuestionText(${idx}, this.value)" placeholder="ระบุข้อความคำถาม..." class="w-full bg-white border border-slate-300 rounded-xl px-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-brand-purple">${escapeHtml(q.text)}</textarea>
+          </div>
+
+          <!-- Options & Scores Row -->
+          <div class="p-2.5 bg-white rounded-xl border border-slate-200">
+            <div class="text-[11px] font-bold text-slate-700 mb-2 flex items-center justify-between">
+              <span>ตัวเลือกคำตอบและคะแนน:</span>
+              <span class="text-[10px] text-slate-400">สเกล ${q.options.length} ระดับ</span>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              ${q.options.map((opt, optIdx) => `
+                <div class="p-1.5 bg-slate-50 rounded-lg border border-slate-200 flex items-center gap-1.5 text-xs">
+                  <input type="text" value="${escapeHtml(opt.label)}" placeholder="ป้ายกำกับ" onchange="updateEditQuestionOption(${idx}, ${optIdx}, 'label', this.value)" class="flex-1 bg-white border border-slate-300 rounded px-1.5 py-1 text-[11px] text-slate-800">
+                  <div class="flex items-center gap-0.5">
+                    <span class="text-[10px] text-slate-400">=</span>
+                    <input type="number" value="${opt.value}" onchange="updateEditQuestionOption(${idx}, ${optIdx}, 'value', Number(this.value))" class="w-10 bg-white border border-slate-300 rounded px-1 py-1 text-[11px] font-mono text-center">
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+      `).join('');
+
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function updateEditQuestionText(idx, val) {
+      if (editModalQuestions[idx]) {
+        editModalQuestions[idx].text = val;
+      }
+    }
+
+    function updateEditQuestionSection(idx, val) {
+      if (editModalQuestions[idx]) {
+        editModalQuestions[idx].section = val;
+      }
+    }
+
+    function updateEditQuestionReverse(idx, val) {
+      if (editModalQuestions[idx]) {
+        editModalQuestions[idx].reverse_scored = !!val;
+      }
+    }
+
+    function updateEditQuestionOption(qIdx, optIdx, field, val) {
+      if (editModalQuestions[qIdx] && editModalQuestions[qIdx].options && editModalQuestions[qIdx].options[optIdx]) {
+        editModalQuestions[qIdx].options[optIdx][field] = val;
+      }
+    }
+
+    function addQuestionToEditModal() {
+      const qNum = editModalQuestions.length + 1;
+      const lastQ = editModalQuestions[editModalQuestions.length - 1];
+      const section = lastQ ? lastQ.section : 'หมวดทั่วไป';
+      editModalQuestions.push({
+        id: `q${qNum}`,
+        number: qNum,
+        text: `ข้อคำถามใหม่ที่ ${qNum}`,
+        section: section,
+        question_type: 'single_choice',
+        options: [
+          { value: 0, label: 'ไม่เลย' },
+          { value: 1, label: 'เล็กน้อย' },
+          { value: 2, label: 'ค่อนข้างมาก' },
+          { value: 3, label: 'มาก' }
+        ],
+        max_score: 3,
+        reverse_scored: false
+      });
+      renderEditModalQuestions();
+      setTimeout(() => {
+        const c = document.getElementById('edit-modal-questions-container');
+        if (c && c.lastElementChild) {
+          c.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 50);
+    }
+
+    function deleteEditQuestion(idx) {
+      if (editModalQuestions.length <= 1) {
+        showToast('ต้องมีข้อคำถามอย่างน้อย 1 ข้อในแบบประเมิน', 'error');
+        return;
+      }
+      editModalQuestions.splice(idx, 1);
+      renderEditModalQuestions();
+      showToast('ลบข้อคำถามเรียบร้อยแล้ว', 'info');
+    }
+
+    function openCurrentAssessmentInBuilder() {
+      if (!currentEditAssessmentId) return;
+      loadAssessmentIntoBuilder(currentEditAssessmentId);
+    }
+
+    function loadAssessmentIntoBuilder(assessmentId) {
+      const asm = adminState.assessments.find(a => a.id === assessmentId);
+      if (!asm) return;
+
+      closeAssessmentEditModal();
+
+      document.getElementById('builder-code').value = asm.code;
+      document.getElementById('builder-title').value = asm.title;
+      document.getElementById('builder-desc').value = asm.description || asm.purpose || '';
+      document.getElementById('builder-min-age').value = asm.min_age_months;
+      document.getElementById('builder-max-age').value = asm.max_age_months;
+
+      // Transfer questions into builderQuestions
+      if (editModalQuestions && editModalQuestions.length > 0) {
+        builderQuestions = editModalQuestions.map((q, idx) => ({
+          id: q.id || `q${idx + 1}`,
+          number: idx + 1,
+          text: q.text,
+          section: q.section,
+          question_type: q.question_type || 'single_choice',
+          scale_type: '0-3',
+          options: q.options || [],
+          custom_min: 0,
+          custom_max: 3,
+          reverse: !!q.reverse_scored
+        }));
+      }
+
+      renderBuilderQuestions();
+      navigateAdmin('builder');
+      showToast(`โหลดข้อคำถามของ ${asm.code} (${builderQuestions.length} ข้อ) เข้าสู่ตัวสร้างแบบประเมินเรียบร้อยแล้ว`, 'success');
     }
 
     function closeAssessmentEditModal() {
@@ -3237,13 +3626,92 @@
       if (document.getElementById('edit-role-teacher').checked) selectedRoles.push('teacher');
       if (document.getElementById('edit-role-specialist').checked) selectedRoles.push('specialist');
 
+      const title = document.getElementById('edit-asm-title').value.trim();
+      const desc = document.getElementById('edit-asm-desc').value.trim();
+      const minAge = parseInt(document.getElementById('edit-asm-min-age').value, 10);
+      const maxAge = parseInt(document.getElementById('edit-asm-max-age').value, 10);
+      const status = document.getElementById('edit-asm-status').value;
+
+      // Build updated sections and items from editModalQuestions
+      const sectionMap = {};
+      const sections = [];
+      const items = [];
+      let secCounter = 1;
+
+      editModalQuestions.forEach((q, idx) => {
+        const secTitle = (q.section || 'หมวดทั่วไป').trim();
+        if (!sectionMap[secTitle]) {
+          const secId = `sec_${secCounter++}`;
+          sectionMap[secTitle] = secId;
+          sections.push({
+            id: secId,
+            title: secTitle,
+            order: sections.length + 1,
+            item_ids: []
+          });
+        }
+
+        const qNum = idx + 1;
+        const itemId = `q${qNum}`;
+        const secId = sectionMap[secTitle];
+        const targetSec = sections.find(s => s.id === secId);
+        if (targetSec) targetSec.item_ids.push(itemId);
+
+        items.push({
+          id: itemId,
+          section_id: secId,
+          number: qNum,
+          text: (q.text || '').trim(),
+          question_type: q.question_type || 'single_choice',
+          options: q.options || [],
+          max_score: q.max_score || 3,
+          reverse_scored: !!q.reverse_scored,
+          is_required: true
+        });
+      });
+
+      const domains = sections.map(s => {
+        const secItems = items.filter(it => s.item_ids.includes(it.id));
+        const maxScore = secItems.reduce((acc, it) => acc + (it.max_score || 3), 0);
+        return {
+          domain_id: s.id,
+          title_th: s.title,
+          item_ids: s.item_ids,
+          max_possible_raw_score: maxScore,
+          cutoffs: [
+            { min_score: 0, max_score: Math.round(maxScore * 0.45), result_level: 'normal', title_th: 'ปกติ', description_th: 'ไม่พบความเสี่ยง' },
+            { min_score: Math.round(maxScore * 0.45) + 1, max_score: maxScore, result_level: 'clinical_alert', title_th: 'มีความเสี่ยง', description_th: 'มีความเสี่ยงในด้านนี้' }
+          ]
+        };
+      });
+
       const payload = {
-        title: document.getElementById('edit-asm-title').value.trim(),
-        description: document.getElementById('edit-asm-desc').value.trim(),
-        min_age_months: parseInt(document.getElementById('edit-asm-min-age').value, 10),
-        max_age_months: parseInt(document.getElementById('edit-asm-max-age').value, 10),
-        status: document.getElementById('edit-asm-status').value,
+        title: title,
+        description: desc,
+        min_age_months: minAge,
+        max_age_months: maxAge,
+        status: status,
         target_roles: selectedRoles,
+        items: items,
+        sections: sections,
+        version: {
+          schema_definition: {
+            sections: sections,
+            items: items,
+            scale: [
+              { value: 0, label: 'ไม่เลย' },
+              { value: 1, label: 'เล็กน้อย' },
+              { value: 2, label: 'ค่อนข้างมาก' },
+              { value: 3, label: 'มาก' }
+            ]
+          },
+          rules_definition: {
+            cutoff_mode: sections.length > 1 ? 'domain' : 'total',
+            scoring_method: 'domain_sum',
+            missing_item_handling: 'error',
+            domains: domains
+          }
+        }
       };
 
       try {
@@ -3253,10 +3721,47 @@
           body: JSON.stringify(payload)
         });
         const data = await res.json();
+
+        // Update local adminState
+        const asmIdx = adminState.assessments.findIndex(a => a.id === currentEditAssessmentId);
+        if (asmIdx !== -1) {
+          Object.assign(adminState.assessments[asmIdx], {
+            title,
+            description: desc,
+            min_age_months: minAge,
+            max_age_months: maxAge,
+            status,
+            target_roles: selectedRoles
+          });
+        }
+
+        // Direct sync with Supabase if available
+        if (supabaseClient) {
+          try {
+            await supabaseClient.from('assessments').update({
+              title,
+              description: desc,
+              min_age_months: minAge,
+              max_age_months: maxAge,
+              status,
+              target_roles: selectedRoles
+            }).eq('id', currentEditAssessmentId);
+
+            await supabaseClient.from('assessment_versions').upsert([{
+              assessment_id: currentEditAssessmentId,
+              version_number: 1,
+              schema_definition: payload.version.schema_definition,
+              rules_definition: payload.version.rules_definition
+            }]);
+          } catch (sbErr) {
+            console.warn('Supabase assessment update notice:', sbErr);
+          }
+        }
+
         closeAssessmentEditModal();
-        await fetchAdminAssessments();
         renderAssessmentsTable();
-        showToast(`บันทึกการแก้ไขแบบประเมิน ${data.assessment.code} เรียบร้อยแล้ว`, 'success');
+        populateCriteriaAssessmentSelect();
+        showToast(`บันทึกการแก้ไขแบบประเมินและข้อคำถามทั้งหมด (${items.length} ข้อ) เรียบร้อยแล้ว`, 'success');
       } catch (err) {
         showToast('เกิดข้อผิดพลาดในการบันทึกการแก้ไข: ' + err.message, 'error');
       }
@@ -3346,11 +3851,70 @@
       if (window.lucide) lucide.createIcons();
     }
 
+    function resolveAssessmentDomains(asm, ver) {
+      if (ver && ver.rules_definition && Array.isArray(ver.rules_definition.domains) && ver.rules_definition.domains.length > 0) {
+        return ver.rules_definition.domains;
+      }
+      if (ver && ver.schema_definition && Array.isArray(ver.schema_definition.sections) && ver.schema_definition.sections.length > 0) {
+        const scale = (ver && ver.schema_definition && ver.schema_definition.scale) || [];
+        const maxScaleVal = scale.length > 0 ? scale[scale.length - 1].value : 3;
+        return ver.schema_definition.sections.map(s => {
+          const itemIds = s.item_ids || [];
+          const maxScore = itemIds.length * maxScaleVal;
+          return {
+            domain_id: s.id,
+            title_th: s.title,
+            item_ids: itemIds,
+            max_possible_raw_score: maxScore,
+            cutoffs: [
+              { min_score: 0, max_score: Math.round(maxScore * 0.45), result_level: 'normal', title_th: 'ปกติ' },
+              { min_score: Math.round(maxScore * 0.45) + 1, max_score: maxScore, result_level: 'clinical_alert', title_th: 'มีความเสี่ยง' }
+            ]
+          };
+        });
+      }
+      if (asm && (asm.code === 'SNAP-IV' || (asm.title && asm.title.includes('SNAP')))) {
+        return [
+          {
+            domain_id: 'inattentive',
+            title_th: 'ขาดสมาธิ (Inattention)',
+            item_ids: ['q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7', 'q8', 'q9'],
+            max_possible_raw_score: 27,
+            cutoffs: [
+              { min_score: 0, max_score: 15, result_level: 'normal', title_th: 'ปกติ' },
+              { min_score: 16, max_score: 27, result_level: 'clinical_alert', title_th: 'มีความเสี่ยง' }
+            ]
+          },
+          {
+            domain_id: 'hyperactivity',
+            title_th: 'ซน/วู่วาม (Hyperactive)',
+            item_ids: ['q10', 'q11', 'q12', 'q13', 'q14', 'q15', 'q16', 'q17', 'q18'],
+            max_possible_raw_score: 27,
+            cutoffs: [
+              { min_score: 0, max_score: 12, result_level: 'normal', title_th: 'ปกติ' },
+              { min_score: 13, max_score: 27, result_level: 'clinical_alert', title_th: 'มีความเสี่ยง' }
+            ]
+          },
+          {
+            domain_id: 'oppositional',
+            title_th: 'ดื้อ/ต่อต้าน (Oppositional)',
+            item_ids: ['q19', 'q20', 'q21', 'q22', 'q23', 'q24', 'q25', 'q26'],
+            max_possible_raw_score: 24,
+            cutoffs: [
+              { min_score: 0, max_score: 12, result_level: 'normal', title_th: 'ปกติ' },
+              { min_score: 13, max_score: 24, result_level: 'clinical_alert', title_th: 'มีความเสี่ยง' }
+            ]
+          }
+        ];
+      }
+      return [];
+    }
+
     function renderDomainCutoffsInputs(ver) {
       const container = document.getElementById('domain-cutoffs-list');
       if (!container) return;
 
-      const domains = (ver && ver.rules_definition && Array.isArray(ver.rules_definition.domains)) ? ver.rules_definition.domains : [];
+      const domains = resolveAssessmentDomains(currentCriteriaAssessment, ver);
       const scale = (ver && ver.schema_definition && ver.schema_definition.scale) || [];
       const maxScaleVal = scale.length > 0 ? scale[scale.length - 1].value : 3;
 
@@ -3382,6 +3946,17 @@
           if (highObj && highObj.description_th) advice = highObj.description_th;
         }
 
+        // Default exact medical thresholds for SNAP-IV
+        if (currentCriteriaAssessment && currentCriteriaAssessment.code === 'SNAP-IV') {
+          if (d.domain_id === 'inattentive' || d.title_th.includes('สมาธิ')) {
+            normal_max = 15; mod_min = 16; mod_max = 15; high_min = 16;
+          } else if (d.domain_id === 'hyperactivity' || d.title_th.includes('ซน') || d.title_th.includes('ไม่นิ่ง')) {
+            normal_max = 12; mod_min = 13; mod_max = 12; high_min = 13;
+          } else if (d.domain_id === 'oppositional' || d.title_th.includes('ดื้อ') || d.title_th.includes('ต่อต้าน')) {
+            normal_max = 12; mod_min = 13; mod_max = 12; high_min = 13;
+          }
+        }
+
         return `
           <div class="p-4 bg-white rounded-2xl border border-slate-200 space-y-3 shadow-xs">
             <div class="flex items-center justify-between border-b border-slate-100 pb-2 flex-wrap gap-2">
@@ -3390,7 +3965,7 @@
                   <i data-lucide="tag" class="w-3.5 h-3.5 text-indigo-600"></i>
                   <span>${idx + 1}. ${d.title_th}</span>
                 </span>
-                <span class="text-[10px] text-slate-400">รหัส: ${d.domain_id} | จำนวน ${(d.item_ids || []).length} ข้อ</span>
+                <span class="text-[10px] text-slate-400">รหัสหัวข้อ: ${d.domain_id} | จำนวน ${(d.item_ids || []).length} ข้อ</span>
               </div>
               <span class="text-[11px] font-bold text-brand-purple bg-purple-50 px-2.5 py-1 rounded-full border border-purple-100">
                 คะแนนเต็มด้านนี้: ${dMax} คะแนน
@@ -3429,7 +4004,7 @@
               <div class="p-3 bg-slate-50/70 rounded-xl border border-rose-200/80 space-y-1.5">
                 <div class="flex items-center gap-1.5 font-bold text-rose-700">
                   <span class="w-2 h-2 rounded-full bg-rose-500"></span>
-                  <span>เสี่ยงสูง (High Risk)</span>
+                  <span>มีความเสี่ยง (At Risk)</span>
                 </div>
                 <div class="flex items-center gap-2 pt-1">
                   <span class="text-slate-500">ตั้งแต่</span>
@@ -3542,7 +4117,7 @@
       const container = document.getElementById('criteria-domain-sliders-container');
       if (!container) return;
 
-      const domains = (ver && ver.rules_definition && ver.rules_definition.domains) || [];
+      const domains = resolveAssessmentDomains(asm, ver);
       const scale = (ver && ver.schema_definition && ver.schema_definition.scale) || [];
       const maxScaleVal = scale.length > 0 ? scale[scale.length - 1].value : 3;
 
@@ -3568,7 +4143,11 @@
 
       container.innerHTML = domains.map((d, idx) => {
         const dMax = d.max_possible_raw_score || ((d.item_ids || []).length * maxScaleVal) || 30;
-        const defaultVal = Math.round(dMax * 0.45);
+        let defaultVal = Math.round(dMax * 0.45);
+        if (d.domain_id === 'inattentive') defaultVal = 19;
+        if (d.domain_id === 'hyperactivity') defaultVal = 4;
+        if (d.domain_id === 'oppositional') defaultVal = 1;
+
         return `
           <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-2">
             <div class="flex items-center justify-between gap-2">
@@ -3618,23 +4197,23 @@
 
           let dLevel = 'normal';
           let dBadgeText = 'ปกติ';
-          let dBadgeClass = 'bg-emerald-100 text-emerald-800 border border-emerald-200';
+          let dBadgeClass = 'bg-slate-100 text-slate-700 border border-slate-200';
           let dGridBorder = 'border-slate-800 bg-slate-800/40';
 
           if (val >= dHighMin && dHighMin > 0) {
             dLevel = 'high';
-            dBadgeText = 'เสี่ยงสูง';
-            dBadgeClass = 'bg-rose-500 text-white';
+            dBadgeText = 'มีความเสี่ยง';
+            dBadgeClass = 'bg-rose-50 text-rose-700 border border-rose-200';
             dGridBorder = 'border-rose-900/60 bg-rose-950/30';
-          } else if (val >= dModMin) {
+          } else if (val >= dModMin && dModMin > dNormMax) {
             dLevel = 'mod';
             dBadgeText = 'เฝ้าระวัง';
-            dBadgeClass = 'bg-amber-500 text-white';
+            dBadgeClass = 'bg-amber-50 text-amber-700 border border-amber-200';
             dGridBorder = 'border-amber-900/60 bg-amber-950/30';
           } else {
             dLevel = 'normal';
             dBadgeText = 'ปกติ';
-            dBadgeClass = 'bg-emerald-500 text-white';
+            dBadgeClass = 'bg-slate-100 text-slate-700 border border-slate-200';
             dGridBorder = 'border-emerald-900/60 bg-emerald-950/30';
           }
 
@@ -3684,19 +4263,40 @@
       const badgeEl = document.getElementById('bench-result-badge');
       const adviceBox = document.getElementById('bench-advice-box');
       const domainGrid = document.getElementById('bench-domain-results-grid');
+      const headingEl = document.getElementById('bench-domain-summary-heading');
+      if (headingEl) {
+        headingEl.innerText = `แบบประเมินคะแนน: ${currentCriteriaAssessment ? currentCriteriaAssessment.code : 'SNAP-IV'}`;
+      }
 
-      // Populate Per-Domain Grid
+      // Populate Per-Domain Grid matching Image 4
       if (domainGrid) {
         if (domainResults.length > 0) {
-          domainGrid.innerHTML = domainResults.map(d => `
-            <div class="p-3 rounded-xl border ${d.gridBorder} flex items-center justify-between gap-2">
-              <div class="truncate">
-                <div class="font-bold text-white text-xs truncate">${d.title}</div>
-                <div class="text-[10px] text-slate-400 mt-0.5">คะแนน: ${d.raw} / ${d.max} คะแนน</div>
+          const isThreeCol = domainResults.length === 3;
+          domainGrid.className = isThreeCol
+            ? "grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs w-full"
+            : "grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs w-full";
+
+          domainGrid.innerHTML = domainResults.map(d => {
+            const isRisk = d.level === 'high';
+            const isMod = d.level === 'mod';
+            const badgeBg = isRisk 
+              ? 'bg-rose-50 text-rose-700 border border-rose-200' 
+              : isMod 
+              ? 'bg-amber-50 text-amber-700 border border-amber-200' 
+              : 'bg-slate-100 text-slate-700 border border-slate-200';
+            const labelText = isRisk ? 'มีความเสี่ยง' : isMod ? 'เฝ้าระวัง' : 'ปกติ';
+
+            return `
+              <div class="bg-white p-4 rounded-xl border border-amber-100/90 shadow-2xs space-y-2 text-slate-800">
+                <div class="font-bold text-slate-800 text-sm truncate">${d.title}</div>
+                <div class="text-xs text-slate-600 font-medium">คะแนนรวม: <span class="font-bold text-slate-900">${d.raw}</span></div>
+                <div class="flex items-center gap-1.5 text-xs text-slate-600 pt-0.5">
+                  <span>แปลผล:</span>
+                  <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold ${badgeBg}">${labelText}</span>
+                </div>
               </div>
-              <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold ${d.badgeClass} flex-shrink-0">${d.badgeText}</span>
-            </div>
-          `).join('');
+            `;
+          }).join('');
         } else {
           domainGrid.innerHTML = `<div class="text-xs text-slate-500 italic sm:col-span-2">แบบประเมินนี้ไม่ได้แบ่งรายหัวข้อ</div>`;
         }
@@ -3752,8 +4352,9 @@
       // Collect updated domains with cutoffs
       let updatedDomains = [];
       const ver = currentCriteriaVersion;
-      if (ver && ver.rules_definition && Array.isArray(ver.rules_definition.domains)) {
-        updatedDomains = ver.rules_definition.domains.map(d => {
+      const domainsToUpdate = resolveAssessmentDomains(currentCriteriaAssessment, ver);
+      if (domainsToUpdate && domainsToUpdate.length > 0) {
+        updatedDomains = domainsToUpdate.map(d => {
           const dNormMaxInput = document.getElementById(`domain-cutoff-normal-${d.domain_id}`);
           const dModMinInput = document.getElementById(`domain-cutoff-mod-min-${d.domain_id}`);
           const dModMaxInput = document.getElementById(`domain-cutoff-mod-max-${d.domain_id}`);
@@ -3769,7 +4370,7 @@
           const dCutoffs = [
             { min_score: 0, max_score: dNormMax, result_level: 'normal', title_th: 'ปกติ', description_th: 'ไม่พบความเสี่ยงในด้านนี้' },
             { min_score: dModMin, max_score: dModMax, result_level: 'borderline', title_th: 'เฝ้าระวัง', description_th: 'ควรสังเกตอาการเฉพาะด้าน' },
-            { min_score: dHighMin, max_score: 999, result_level: 'clinical_alert', title_th: 'เสี่ยงสูง', description_th: dAdvice || 'มีความเสี่ยงสูงในด้านนี้' }
+            { min_score: dHighMin, max_score: 999, result_level: 'clinical_alert', title_th: 'มีความเสี่ยง', description_th: dAdvice || 'มีความเสี่ยงในด้านนี้' }
           ];
 
           return {

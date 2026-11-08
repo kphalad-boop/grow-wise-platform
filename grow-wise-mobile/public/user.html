@@ -1676,17 +1676,50 @@
       document.getElementById('result-status-badge').innerText = result.overall_status_label;
 
       const domainsContainer = document.getElementById('result-domains-container');
-      domainsContainer.innerHTML = result.domain_results.map(d => `
-        <div class="bg-gray-50 rounded-2xl p-4 border border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <div class="text-sm font-bold text-gray-800">${d.title_th}</div>
-            <div class="text-xs text-gray-500 mt-0.5">คะแนนดิบ: <span class="font-bold text-brand-purple">${d.raw_score}</span> / ${d.max_score} คะแนน</div>
+      const isThreeDomains = result.domain_results && result.domain_results.length === 3;
+
+      if (isThreeDomains) {
+        domainsContainer.innerHTML = `
+          <div class="bg-[#fcfaf6] p-5 rounded-3xl border border-amber-200/90 shadow-xs space-y-3">
+            <h4 class="font-bold text-amber-900 text-sm">แบบประเมินคะแนน: ${result.assessment_code || 'SNAP-IV'}</h4>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+              ${result.domain_results.map(d => {
+                const isRisk = d.status_badge && (d.status_badge.includes('เสี่ยง') || d.is_elevated || d.level === 'high');
+                const isMod = d.status_badge && (d.status_badge.includes('เฝ้าระวัง') || d.level === 'mod');
+                const badgeClass = isRisk
+                  ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                  : isMod
+                  ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                  : 'bg-slate-100 text-slate-700 border border-slate-200';
+                const statusLabel = isRisk ? 'มีความเสี่ยง' : isMod ? 'เฝ้าระวัง' : 'ปกติ';
+
+                return `
+                  <div class="bg-white p-4 rounded-2xl border border-amber-100 shadow-2xs space-y-2">
+                    <div class="font-bold text-slate-800 text-sm">${d.title_th}</div>
+                    <div class="text-xs text-slate-600 font-medium">คะแนนรวม: <span class="font-bold text-slate-900">${d.raw_score}</span></div>
+                    <div class="flex items-center gap-1.5 text-xs text-slate-600 pt-0.5">
+                      <span>แปลผล:</span>
+                      <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold ${badgeClass}">${statusLabel}</span>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
           </div>
-          <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-100 text-brand-purple text-xs font-bold">
-            <span>${d.status_badge}</span>
+        `;
+      } else {
+        domainsContainer.innerHTML = result.domain_results.map(d => `
+          <div class="bg-gray-50 rounded-2xl p-4 border border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <div class="text-sm font-bold text-gray-800">${d.title_th}</div>
+              <div class="text-xs text-gray-500 mt-0.5">คะแนนดิบ: <span class="font-bold text-brand-purple">${d.raw_score}</span> / ${d.max_score} คะแนน</div>
+            </div>
+            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-100 text-brand-purple text-xs font-bold">
+              <span>${d.status_badge}</span>
+            </div>
           </div>
-        </div>
-      `).join('');
+        `).join('');
+      }
 
       const recList = document.getElementById('result-recommendations-list');
       recList.innerHTML = result.domain_results.flatMap(d => d.recommendations).map(r => `
