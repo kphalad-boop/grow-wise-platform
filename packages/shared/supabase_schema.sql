@@ -184,3 +184,17 @@ CREATE POLICY "Assessments view policy"
 CREATE POLICY "Staff only audit logs"
     ON public.audit_logs FOR SELECT
     USING (public.is_staff(auth.uid()));
+
+-- 9. ENABLE SUPABASE REALTIME REPLICATION (ALL DEVICES REAL-TIME SYNC)
+DO $$ BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.profiles;
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.children;
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.child_access_grants;
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.assessments;
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.assessment_versions;
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.assessment_responses;
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.assessment_results;
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.audit_logs;
+EXCEPTION WHEN others THEN
+    null;
+END $$;

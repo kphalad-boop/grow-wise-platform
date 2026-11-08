@@ -12,6 +12,8 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Supabase JS Client v2 (Realtime & Cloud Database) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     tailwind.config = {
       theme: {
@@ -95,7 +97,13 @@
         </nav>
 
         <!-- User Profile & Action -->
-        <div id="user-header-actions" class="flex items-center gap-3">
+        <div id="user-header-actions" class="flex items-center gap-2.5">
+          <!-- Supabase Realtime Status Pill -->
+          <div id="user-realtime-badge" class="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 shadow-xs" title="เชื่อมต่อระบบฐานข้อมูล Supabase Realtime ข้ามทุกอุปกรณ์">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span>Supabase Realtime ⚡</span>
+          </div>
+
           <button id="btn-header-onboarding" onclick="openOnboardingModal()" class="hidden sm:flex items-center gap-1 text-xs text-brand-purple hover:underline font-medium px-2 py-1">
             <i data-lucide="help-circle" class="w-3.5 h-3.5"></i>
             <span>แนะนำระบบ</span>
@@ -834,8 +842,101 @@
       selectedResult: null,
     };
 
+    // ==========================================
+    // SUPABASE REALTIME & CLOUD CLIENT CONFIG
+    // ==========================================
+    const SUPABASE_CONFIG = {
+      url: 'https://qjocagwfzazcgzqnyhux.supabase.co',
+      key: 'sb_publishable_7VCW1PGILyI3mDx7Yikycg_QId8b5Ri'
+    };
+    let supabaseClient = null;
+    let realtimeChannel = null;
+
+    function initSupabase() {
+      if (window.supabase) {
+        try {
+          supabaseClient = window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.key);
+          setupRealtimeSync();
+        } catch (err) {
+          console.warn('Supabase initialization warning:', err);
+        }
+      }
+    }
+
+    function setupRealtimeSync() {
+      if (!supabaseClient) return;
+
+      realtimeChannel = supabaseClient.channel('growwise-global-realtime', {
+        config: { broadcast: { self: false } }
+      });
+
+      // 1. Listen for Broadcast Events (Cross-device instant sync)
+      realtimeChannel.on('broadcast', { event: 'child_created' }, (payload) => {
+        console.log('⚡ [Realtime Broadcast] New child added on another device:', payload);
+        fetchChildren();
+        const cName = (payload && payload.payload && payload.payload.first_name) || '';
+        showToast(`มีข้อมูลเด็กใหม่ (${cName}) ซิงก์มาจากอุปกรณ์อื่น`, 'info');
+      });
+
+      realtimeChannel.on('broadcast', { event: 'assessment_submitted' }, (payload) => {
+        console.log('⚡ [Realtime Broadcast] Assessment submitted on another device:', payload);
+        if (state.activeChildId) loadChildHistory(state.activeChildId);
+        showToast('มีการส่งผลการประเมินจากอุปกรณ์อื่น และซิงก์เรียลไทม์เรียบร้อยแล้ว', 'info');
+      });
+
+      realtimeChannel.on('broadcast', { event: 'criteria_updated' }, (payload) => {
+        console.log('⚡ [Realtime Broadcast] Criteria updated by Admin:', payload);
+        fetchAssessments();
+        showToast('เกณฑ์การแปลผลทางคลินิกได้รับการอัปเดตจาก Admin', 'info');
+      });
+
+      // 2. Listen for PostgreSQL Changes (Direct Database Trigger)
+      realtimeChannel.on('postgres_changes', { event: '*', schema: 'public', table: 'children' }, (payload) => {
+        console.log('⚡ [Realtime Postgres] children change:', payload);
+        fetchChildren();
+      });
+
+      realtimeChannel.on('postgres_changes', { event: '*', schema: 'public', table: 'assessment_results' }, (payload) => {
+        console.log('⚡ [Realtime Postgres] assessment_results change:', payload);
+        if (state.activeChildId) loadChildHistory(state.activeChildId);
+      });
+
+      realtimeChannel.on('postgres_changes', { event: '*', schema: 'public', table: 'assessment_versions' }, (payload) => {
+        console.log('⚡ [Realtime Postgres] assessment_versions change:', payload);
+        fetchAssessments();
+      });
+
+      realtimeChannel.subscribe((status) => {
+        const badge = document.getElementById('user-realtime-badge');
+        if (badge) {
+          if (status === 'SUBSCRIBED') {
+            badge.className = 'hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 shadow-xs';
+            badge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span><span>Supabase Realtime ⚡</span>';
+          } else {
+            badge.className = 'hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200 shadow-xs';
+            badge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span><span>Connecting...</span>';
+          }
+        }
+      });
+    }
+
+    async function broadcastEvent(eventName, payload) {
+      if (realtimeChannel) {
+        try {
+          await realtimeChannel.send({
+            type: 'broadcast',
+            event: eventName,
+            payload: payload
+          });
+        } catch (e) {
+          console.warn('Realtime broadcast error:', e);
+        }
+      }
+    }
+
     // Initialize App
     async function init() {
+      initSupabase();
       const savedUser = localStorage.getItem('growwise_user_email');
       if (savedUser) {
         try {
@@ -1458,6 +1559,33 @@
         });
         const data = await res.json();
         showResultView(data.result);
+
+        // Broadcast to other devices (Admin Web, Mobile, etc.) in Realtime
+        broadcastEvent('assessment_submitted', {
+          childName: `${child.first_name} ${child.last_name}`,
+          assessmentCode: state.currentAssessment ? state.currentAssessment.code : '',
+          assessmentTitle: state.currentAssessment ? state.currentAssessment.title : '',
+          totalScore: data.result ? data.result.total_raw_score : 0,
+          result: data.result
+        });
+
+        // Write directly to Supabase table if available
+        if (supabaseClient) {
+          try {
+            supabaseClient.from('submissions').insert([{
+              assessment_version_id: state.currentVersion.id,
+              child_id: child.id,
+              respondent_id: payload.respondent_id,
+              respondent_role: payload.respondent_role,
+              calculated_age_months: age.months,
+              raw_answers: state.runnerAnswers,
+              total_raw_score: data.result ? data.result.total_raw_score : 0,
+              domain_scores: data.result ? data.result.domain_results : []
+            }]).then(() => console.log('Saved to Supabase submissions'));
+          } catch (sbErr) {
+            console.warn('Supabase insert note:', sbErr);
+          }
+        }
       } catch (e) {
         console.error(e);
         showToast('เกิดข้อผิดพลาดในการส่งผลประเมิน กรุณาลองใหม่อีกครั้ง', 'error');
@@ -1773,6 +1901,26 @@
         await fetchChildren();
         renderHome();
         showToast(`เพิ่มข้อมูลเด็ก ${data.child.first_name} เรียบร้อยแล้ว`, 'success');
+
+        // Broadcast to other devices (Admin Web, Mobile, other browsers) in Realtime
+        broadcastEvent('child_created', data.child);
+
+        // Write directly to Supabase table if available
+        if (supabaseClient) {
+          try {
+            supabaseClient.from('children').insert([{
+              first_name: payload.first_name,
+              last_name: payload.last_name,
+              nickname: payload.nickname,
+              gender: payload.gender,
+              birth_date: payload.birth_date,
+              school_name: payload.school_name,
+              grade_level: payload.grade_level
+            }]).then(() => console.log('Saved to Supabase children table'));
+          } catch (sbErr) {
+            console.warn('Supabase insert note:', sbErr);
+          }
+        }
       } catch (e) {
         console.error(e);
         showToast('เกิดข้อผิดพลาดในการบันทึกข้อมูลเด็ก', 'error');

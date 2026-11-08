@@ -12,6 +12,8 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Supabase JS Client v2 (Realtime & Cloud Database) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     tailwind.config = {
       theme: {
@@ -1649,6 +1651,105 @@
 
   <!-- Admin Logic Script -->
   <script>
+    // ==========================================
+    // ADMIN SUPABASE REALTIME & CLOUD CLIENT CONFIG
+    // ==========================================
+    const SUPABASE_CONFIG = {
+      url: 'https://qjocagwfzazcgzqnyhux.supabase.co',
+      key: 'sb_publishable_7VCW1PGILyI3mDx7Yikycg_QId8b5Ri'
+    };
+    let supabaseClient = null;
+    let realtimeChannel = null;
+
+    function initAdminSupabaseRealtime() {
+      if (window.supabase) {
+        try {
+          supabaseClient = window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.key);
+          setupAdminRealtimeSync();
+        } catch (err) {
+          console.warn('Admin Supabase init warning:', err);
+        }
+      }
+    }
+
+    function setupAdminRealtimeSync() {
+      if (!supabaseClient) return;
+
+      realtimeChannel = supabaseClient.channel('growwise-global-realtime', {
+        config: { broadcast: { self: false } }
+      });
+
+      // 1. Listen for Broadcast Events from User Apps & Mobile devices
+      realtimeChannel.on('broadcast', { event: 'assessment_submitted' }, (payload) => {
+        console.log('⚡ [Realtime Broadcast] New assessment submitted:', payload);
+        fetchAdminResults();
+        fetchAdminStats();
+        const p = payload && payload.payload ? payload.payload : {};
+        showToast(`⚡ มีผลการประเมินใหม่จาก ${p.childName || 'ผู้ใช้'}: ${p.assessmentTitle || ''} (รอตรวจ)`, 'info');
+      });
+
+      realtimeChannel.on('broadcast', { event: 'child_created' }, (payload) => {
+        console.log('⚡ [Realtime Broadcast] New child added:', payload);
+        fetchAdminStats();
+        const cName = (payload && payload.payload && payload.payload.first_name) || '';
+        showToast(`⚡ มีการลงทะเบียนเด็กใหม่ในระบบ: ${cName}`, 'info');
+      });
+
+      // 2. Listen for PostgreSQL Changes directly from Supabase
+      realtimeChannel.on('postgres_changes', { event: '*', schema: 'public', table: 'assessment_results' }, (payload) => {
+        console.log('⚡ [Realtime Postgres] Results changed:', payload);
+        fetchAdminResults();
+        fetchAdminStats();
+      });
+
+      realtimeChannel.on('postgres_changes', { event: '*', schema: 'public', table: 'children' }, (payload) => {
+        console.log('⚡ [Realtime Postgres] Children changed:', payload);
+        fetchAdminStats();
+      });
+
+      realtimeChannel.on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, (payload) => {
+        console.log('⚡ [Realtime Postgres] Users changed:', payload);
+        fetchAdminUsers();
+      });
+
+      realtimeChannel.subscribe((status) => {
+        const badge = document.getElementById('topbar-database-status');
+        if (badge) {
+          if (status === 'SUBSCRIBED') {
+            badge.className = 'flex items-center gap-2 text-xs bg-emerald-50 text-emerald-800 px-3 py-1.5 rounded-xl border border-emerald-200 shadow-xs hidden sm:flex';
+            badge.innerHTML = `
+              <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span class="font-medium flex items-center gap-1.5">
+                <span class="font-bold">Supabase:</span>
+                <span>Realtime Live ⚡</span>
+                <span class="text-[10px] font-mono bg-emerald-100 text-emerald-900 px-1.5 py-0.5 rounded">qjocagwfzazcgzqnyhux</span>
+              </span>
+            `;
+          } else {
+            badge.className = 'flex items-center gap-2 text-xs bg-amber-50 text-amber-800 px-3 py-1.5 rounded-xl border border-amber-200 shadow-xs hidden sm:flex';
+            badge.innerHTML = `
+              <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+              <span class="font-medium">Supabase: Connecting...</span>
+            `;
+          }
+        }
+      });
+    }
+
+    async function broadcastAdminEvent(eventName, payload) {
+      if (realtimeChannel) {
+        try {
+          await realtimeChannel.send({
+            type: 'broadcast',
+            event: eventName,
+            payload: payload
+          });
+        } catch (e) {
+          console.warn('Admin Realtime broadcast error:', e);
+        }
+      }
+    }
+
     let adminState = {
       assessments: [],
       results: [],
@@ -1726,6 +1827,7 @@
     }
 
     async function initAdminData() {
+      initAdminSupabaseRealtime();
       await fetchAdminStats();
       await fetchAdminAssessments();
       await fetchAdminResults();
@@ -2511,6 +2613,7 @@
 
         showToast(`สร้างผู้ใช้งาน "${fullName}" (${getRoleLabel(role)}) สำเร็จแล้ว`, 'success');
         closeCreateUserModal();
+        broadcastAdminEvent('user_updated', { type: 'created', user: data.user });
         await fetchAdminUsers();
         await fetchAdminAuditLogs();
         filterAndRenderUsersTable();
@@ -2586,6 +2689,7 @@
 
         showToast(`บันทึกการแก้ไขข้อมูลผู้ใช้ "${fullName}" สำเร็จแล้ว`, 'success');
         closeEditUserModal();
+        broadcastAdminEvent('user_updated', { type: 'updated', user: data.user });
         await fetchAdminUsers();
         await fetchAdminAuditLogs();
         filterAndRenderUsersTable();
@@ -2644,6 +2748,7 @@
 
         showToast('ลบผู้ใช้งานออกจากระบบเรียบร้อยแล้ว', 'success');
         closeDeleteUserModal();
+        broadcastAdminEvent('user_updated', { type: 'deleted', userId: currentDeleteUserId });
         await fetchAdminUsers();
         await fetchAdminAuditLogs();
         filterAndRenderUsersTable();
@@ -3593,6 +3698,25 @@
         };
         showToast(`บันทึกเกณฑ์การแปลผล (${modeLabels[currentCriteriaCutoffMode] || currentCriteriaCutoffMode}) สำหรับ ${currentCriteriaAssessment ? currentCriteriaAssessment.code : ''} เรียบร้อยแล้ว`, 'success');
         currentCriteriaVersion = data.version;
+
+        // Broadcast to all other devices in real-time
+        broadcastAdminEvent('criteria_updated', {
+          assessmentId: currentCriteriaAssessmentId,
+          code: currentCriteriaAssessment ? currentCriteriaAssessment.code : '',
+          mode: currentCriteriaCutoffMode,
+          rules: payload.rules
+        });
+
+        // Write directly to Supabase assessment_versions table if available
+        if (supabaseClient) {
+          try {
+            supabaseClient.from('assessment_versions').update({
+              rules_definition: payload.rules
+            }).eq('assessment_id', currentCriteriaAssessmentId).then(() => console.log('Saved criteria to Supabase'));
+          } catch (sbErr) {
+            console.warn('Supabase criteria update note:', sbErr);
+          }
+        }
       } catch (err) {
         showToast('เกิดข้อผิดพลาดในการบันทึกเกณฑ์: ' + err.message, 'error');
       }

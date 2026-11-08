@@ -465,3 +465,20 @@ CREATE POLICY "Authenticated users can insert audit logs"
     ON public.audit_logs FOR INSERT
     TO authenticated
     WITH CHECK (actor_id = auth.uid());
+
+-- -----------------------------------------------------------------------------
+-- 10. ENABLE SUPABASE REALTIME REPLICATION (BROADCAST ACROSS ALL DEVICES)
+-- -----------------------------------------------------------------------------
+DO $$ BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.profiles;
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.children;
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.child_access_grants;
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.assessments;
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.assessment_versions;
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.submissions;
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.audit_logs;
+EXCEPTION WHEN others THEN
+    -- Fallback if publication already includes tables or during partial setup
+    null;
+END $$;
+
