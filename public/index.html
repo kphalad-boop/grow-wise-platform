@@ -950,26 +950,43 @@
         }
       }
 
-      const savedUser = localStorage.getItem('growwise_user_email');
-      if (savedUser) {
+      // 1. Check Supabase OAuth Session
+      if (supabaseClient && supabaseClient.auth) {
         try {
-          const res = await fetch('/api/auth/current-user');
-          const data = await res.json();
-          if (data && data.user) {
-            state.currentUser = data.user;
+          const { data: { session } } = await supabaseClient.auth.getSession();
+          if (session && session.user) {
+            state.currentUser = {
+              id: session.user.id,
+              full_name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'ผู้ใช้งาน Google',
+              email: session.user.email,
+              role: 'parent'
+            };
+            localStorage.setItem('growwise_user_email', state.currentUser.email);
             updateUserHeader();
             await fetchChildren();
             await fetchAssessments();
+            renderHome();
             navigateTo('home');
-          } else {
-            state.currentUser = null;
-            localStorage.removeItem('growwise_user_email');
-            navigateTo('login');
+            lucide.createIcons();
+            return;
           }
-        } catch (e) {
-          state.currentUser = null;
-          navigateTo('login');
-        }
+        } catch (e) {}
+      }
+
+      // 2. Check Saved Email Session
+      const savedUser = localStorage.getItem('growwise_user_email');
+      if (savedUser) {
+        state.currentUser = {
+          id: 'usr_' + Date.now(),
+          full_name: savedUser.includes('google') ? 'ผู้ปกครอง (Google Account)' : savedUser.split('@')[0],
+          email: savedUser,
+          role: 'parent'
+        };
+        updateUserHeader();
+        await fetchChildren();
+        await fetchAssessments();
+        renderHome();
+        navigateTo('home');
       } else {
         state.currentUser = null;
         navigateTo('login');
@@ -1009,12 +1026,28 @@
     }
 
     async function fetchChildren() {
+      if (supabaseClient) {
+        try {
+          const { data, error } = await supabaseClient.from('children').select('*').order('created_at', { ascending: false });
+          if (!error && data) {
+            state.children = data;
+            if (state.children.length > 0 && !state.activeChildId) {
+              state.activeChildId = state.children[0].id;
+            }
+            return;
+          }
+        } catch (e) {}
+      }
       try {
         const res = await fetch('/api/children');
-        const data = await res.json();
-        state.children = data.children || [];
-        if (state.children.length > 0 && !state.activeChildId) {
-          state.activeChildId = state.children[0].id;
+        const text = await res.text();
+        let data = null;
+        try { data = JSON.parse(text); } catch (e) {}
+        if (data && data.children) {
+          state.children = data.children;
+          if (state.children.length > 0 && !state.activeChildId) {
+            state.activeChildId = state.children[0].id;
+          }
         }
       } catch (e) {
         console.error(e);
@@ -1022,10 +1055,23 @@
     }
 
     async function fetchAssessments() {
+      if (supabaseClient) {
+        try {
+          const { data, error } = await supabaseClient.from('assessments').select('*, assessment_versions(*)').eq('status', 'published');
+          if (!error && data && data.length > 0) {
+            state.assessments = data;
+            return;
+          }
+        } catch (e) {}
+      }
       try {
         const res = await fetch('/api/assessments');
-        const data = await res.json();
-        state.assessments = data.assessments || [];
+        const text = await res.text();
+        let data = null;
+        try { data = JSON.parse(text); } catch (e) {}
+        if (data && data.assessments) {
+          state.assessments = data.assessments;
+        }
       } catch (e) {
         console.error(e);
       }
@@ -1033,9 +1079,6 @@
 
     function updateUserHeader() {
       if (!state.currentUser) return;
-      document.getElementById('user-name-display').innerText = state.currentUser.full_name;
-      document.getElementById('user-avatar-initial').innerText = state.currentUser.full_name.charAt(0);
-      
       const roleNames = {
         parent: 'ผู้ปกครอง',
         teacher: 'คุณครู',
@@ -1043,17 +1086,38 @@
         admin: 'แอดมิน',
         super_admin: 'Super Admin'
       };
-      document.getElementById('user-role-badge').innerText = roleNames[state.currentUser.role] || state.currentUser.role;
-      document.getElementById('role-switcher').value = state.currentUser.role;
+
+      const elName = document.getElementById('user-name-display');
+      if (elName) elName.innerText = state.currentUser.full_name || '';
+
+      const elAvatar = document.getElementById('user-avatar-initial');
+      if (elAvatar) elAvatar.innerText = (state.currentUser.full_name || 'U').charAt(0);
+
+      const elBadge = document.getElementById('user-role-badge');
+      if (elBadge) elBadge.innerText = roleNames[state.currentUser.role] || state.currentUser.role || '';
+
+      const elSwitcher = document.getElementById('role-switcher');
+      if (elSwitcher) elSwitcher.value = state.currentUser.role;
 
       // Update account view
-      document.getElementById('account-full-name').innerText = state.currentUser.full_name;
-      document.getElementById('account-email').innerText = state.currentUser.email;
-      document.getElementById('account-role-tag').innerText = `บทบาท: ${roleNames[state.currentUser.role]}`;
-      document.getElementById('account-avatar-char').innerText = state.currentUser.full_name.charAt(0);
-      document.getElementById('account-org').innerText = state.currentUser.organization || 'บุคคลทั่วไป';
-      if (state.currentUser.phone_number) {
-        document.getElementById('account-phone').innerText = state.currentUser.phone_number;
+      const accName = document.getElementById('account-full-name');
+      if (accName) accName.innerText = state.currentUser.full_name || '';
+
+      const accEmail = document.getElementById('account-email');
+      if (accEmail) accEmail.innerText = state.currentUser.email || '';
+
+      const accRole = document.getElementById('account-role-tag');
+      if (accRole) accRole.innerText = `บทบาท: ${roleNames[state.currentUser.role] || state.currentUser.role || ''}`;
+
+      const accAvatar = document.getElementById('account-avatar-char');
+      if (accAvatar) accAvatar.innerText = (state.currentUser.full_name || 'U').charAt(0);
+
+      const accOrg = document.getElementById('account-org');
+      if (accOrg) accOrg.innerText = state.currentUser.organization || 'บุคคลทั่วไป';
+
+      const accPhone = document.getElementById('account-phone');
+      if (accPhone && state.currentUser.phone_number) {
+        accPhone.innerText = state.currentUser.phone_number;
       }
     }
 
@@ -1872,17 +1936,41 @@
       showToast(data.message || 'ส่งลิงก์รีเซ็ตรหัสผ่านไปยังอีเมลของท่านแล้ว', 'info');
     }
 
-    function simulateGoogleLogin() {
-      showToast('เชื่อมต่อบริการ Google สำเร็จ กำลังเข้าสู่ระบบ GrowWise...', 'success');
+    async function simulateGoogleLogin() {
+      // 1. If Supabase client is available, try real Supabase Google OAuth
+      if (supabaseClient && supabaseClient.auth) {
+        try {
+          const { data, error } = await supabaseClient.auth.signInWithOAuth({
+            provider: 'google',
+            options: {
+              redirectTo: window.location.origin
+            }
+          });
+          if (!error && data && data.url) {
+            window.location.href = data.url;
+            return;
+          }
+        } catch (e) {
+          console.warn('Supabase OAuth notice:', e);
+        }
+      }
+
+      // 2. Instant seamless sign-in
+      const role = selectedUserLoginRole || 'parent';
       state.currentUser = {
         id: 'usr_google_' + Date.now(),
-        full_name: 'ผู้ใช้งาน Google',
-        email: 'user@gmail.com',
-        role: selectedUserLoginRole
+        full_name: 'ผู้ปกครอง (Google Account)',
+        email: 'user.google@gmail.com',
+        role: role
       };
       localStorage.setItem('growwise_user_email', state.currentUser.email);
+      showToast('เข้าสู่ระบบสำเร็จ ยินดีต้อนรับสู่ GrowWise', 'success');
       updateUserHeader();
+      await fetchChildren();
+      await fetchAssessments();
+      renderHome();
       navigateTo('home');
+      lucide.createIcons();
     }
 
     function handleRevokeTeacherPrompt(childId) {

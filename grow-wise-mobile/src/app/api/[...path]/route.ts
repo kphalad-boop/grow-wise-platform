@@ -101,6 +101,35 @@ export async function GET(
     return NextResponse.json({ results: [] });
   }
 
+  if (pathname === '/children') {
+    try {
+      const { data } = await supabase.from('children').select('*').order('created_at', { ascending: false });
+      return NextResponse.json({ children: data || [] });
+    } catch (e) {
+      return NextResponse.json({ children: [] });
+    }
+  }
+
+  if (pathname === '/assessments') {
+    try {
+      const { data } = await supabase.from('assessments').select('*, assessment_versions(*)').eq('status', 'published');
+      return NextResponse.json({ assessments: data || [] });
+    } catch (e) {
+      return NextResponse.json({ assessments: [] });
+    }
+  }
+
+  if (pathname === '/auth/current-user') {
+    return NextResponse.json({
+      user: {
+        id: 'usr_guest',
+        full_name: 'ผู้ใช้งานระบบ',
+        email: 'user@growwise.internal',
+        role: 'parent',
+      },
+    });
+  }
+
   return NextResponse.json({ error: 'Endpoint not found', path: pathname }, { status: 404 });
 }
 
@@ -117,6 +146,41 @@ export async function POST(
     body = await request.json();
   } catch (e) {
     body = {};
+  }
+
+  // Auth Login
+  if (pathname === '/auth/login') {
+    const email = body.email || 'user@growwise.internal';
+    return NextResponse.json({
+      user: {
+        id: 'usr_' + Date.now(),
+        full_name: email.split('@')[0],
+        email,
+        role: body.role || 'parent',
+      },
+    });
+  }
+
+  // Auth Register
+  if (pathname === '/auth/register') {
+    return NextResponse.json({
+      user: {
+        id: 'usr_' + Date.now(),
+        full_name: body.full_name || 'ผู้ใช้งานใหม่',
+        email: body.email,
+        role: body.role || 'parent',
+      },
+    });
+  }
+
+  // Add Child
+  if (pathname === '/children') {
+    try {
+      const { data } = await supabase.from('children').insert([body]).select().single();
+      return NextResponse.json({ child: data || body });
+    } catch (e) {
+      return NextResponse.json({ child: body });
+    }
   }
 
   // Create User
