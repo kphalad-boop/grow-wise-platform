@@ -57,9 +57,10 @@ export default function AssessmentPreStartPage() {
           .select('*')
           .order('created_at', { ascending: false });
 
-        if (childData && childData.length > 0) {
-          setChildren(childData);
-          setSelectedChildId(childData[0].id);
+        if (childData && (childData as any[]).length > 0) {
+          const list = childData as unknown as Child[];
+          setChildren(list);
+          setSelectedChildId(list[0].id);
         }
       }
       setIsLoading(false);
