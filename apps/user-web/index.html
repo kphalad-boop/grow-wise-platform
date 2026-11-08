@@ -1,0 +1,1786 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GrowWise — เติบโตอย่างเข้าใจ ในทุกก้าว</title>
+  <!-- Google Fonts: Noto Sans Thai -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              purple: '#6950A1',
+              light: '#8672B2',
+              soft: '#F4F1FA',
+              dark: '#483475',
+              accent: '#E6DFF1',
+            }
+          },
+          fontFamily: {
+            sans: ['"Noto Sans Thai"', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      font-family: 'Noto Sans Thai', sans-serif;
+      background-color: #FAF9FD;
+      color: #2D3748;
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #CBD5E0;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div id="toast-container" class="fixed top-5 right-5 z-[9999] flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- Official Medical Screening Disclaimer Bar -->
+  <div class="bg-purple-900 text-purple-100 px-4 py-1.5 text-center text-xs font-medium flex items-center justify-center gap-2 shadow-xs">
+    <i data-lucide="shield-check" class="w-3.5 h-3.5 text-brand-light"></i>
+    <span>GrowWise — แพลตฟอร์มคัดกรองและส่งเสริมพัฒนาการเด็กเบื้องต้น (ผลการคัดกรองไม่ใช่การวินิจฉัยโรค)</span>
+  </div>
+
+  <!-- Desktop First Main Navigation (Hidden on login page) -->
+  <header id="main-header" style="display: none;" class="hidden bg-white border-b border-gray-200 sticky top-0 z-40 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <!-- Brand Logo & Slogan -->
+        <div class="flex items-center gap-3 cursor-pointer" onclick="navigateTo('home')">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-purple to-brand-light flex items-center justify-center text-white shadow-md">
+            <i data-lucide="sparkles" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <div class="text-xl font-bold text-brand-purple leading-tight">GrowWise</div>
+            <div class="text-xs text-gray-500 font-medium">เติบโตอย่างเข้าใจ ในทุกก้าว</div>
+          </div>
+        </div>
+
+        <!-- Desktop Navigation Links -->
+        <nav id="main-desktop-nav" class="hidden md:flex items-center space-x-1 lg:space-x-2">
+          <button onclick="navigateTo('home')" class="nav-btn px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:text-brand-purple hover:bg-brand-soft transition flex items-center gap-1.5" data-nav="home">
+            <i data-lucide="home" class="w-4 h-4"></i>
+            <span>หน้าแรก</span>
+          </button>
+          <button onclick="navigateTo('children')" class="nav-btn px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:text-brand-purple hover:bg-brand-soft transition flex items-center gap-1.5" data-nav="children">
+            <i data-lucide="users" class="w-4 h-4"></i>
+            <span>เด็กของฉัน</span>
+          </button>
+          <button onclick="navigateTo('assessments')" class="nav-btn px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:text-brand-purple hover:bg-brand-soft transition flex items-center gap-1.5" data-nav="assessments">
+            <i data-lucide="clipboard-check" class="w-4 h-4"></i>
+            <span>แบบประเมิน</span>
+          </button>
+          <button onclick="navigateTo('history')" class="nav-btn px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:text-brand-purple hover:bg-brand-soft transition flex items-center gap-1.5" data-nav="history">
+            <i data-lucide="history" class="w-4 h-4"></i>
+            <span>ประวัติการประเมิน</span>
+          </button>
+        </nav>
+
+        <!-- User Profile & Action -->
+        <div id="user-header-actions" class="flex items-center gap-3">
+          <button id="btn-header-onboarding" onclick="openOnboardingModal()" class="hidden sm:flex items-center gap-1 text-xs text-brand-purple hover:underline font-medium px-2 py-1">
+            <i data-lucide="help-circle" class="w-3.5 h-3.5"></i>
+            <span>แนะนำระบบ</span>
+          </button>
+
+          <button id="btn-header-login" onclick="navigateTo('login')" class="hidden px-4 py-2 rounded-xl bg-brand-purple hover:bg-brand-dark text-white text-xs font-semibold shadow-sm transition">
+            เข้าสู่ระบบ
+          </button>
+
+          <div id="user-display" class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-brand-soft border border-brand-accent text-xs">
+            <div class="w-6 h-6 rounded-full bg-brand-purple text-white flex items-center justify-center font-bold text-[10px]" id="user-avatar-initial">-</div>
+            <span class="font-medium text-brand-purple" id="user-name-display">-</span>
+            <span class="bg-brand-purple text-white px-1.5 py-0.5 rounded text-[10px]" id="user-role-badge">-</span>
+          </div>
+
+          <button id="btn-header-account" onclick="navigateTo('account')" class="p-2 rounded-lg text-gray-600 hover:text-brand-purple hover:bg-gray-100 transition" title="จัดการบัญชี">
+            <i data-lucide="user-cog" class="w-5 h-5"></i>
+          </button>
+
+          <button id="btn-header-logout" onclick="confirmUserLogout()" class="p-2 rounded-lg text-gray-500 hover:text-rose-600 hover:bg-rose-50 transition" title="ออกจากระบบ">
+            <i data-lucide="log-out" class="w-5 h-5"></i>
+          </button>
+
+          <!-- Mobile Hamburger -->
+          <button id="btn-header-menu" onclick="toggleMobileMenu()" class="md:hidden p-2 rounded-lg text-gray-600 hover:bg-gray-100 focus:outline-none">
+            <i data-lucide="menu" class="w-6 h-6"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mobile Dropdown Navigation -->
+    <div id="mobile-menu" class="hidden md:hidden border-t border-gray-200 bg-white px-4 pt-2 pb-4 space-y-1">
+      <button onclick="navigateTo('home'); toggleMobileMenu()" class="w-full text-left px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-brand-soft flex items-center gap-2">
+        <i data-lucide="home" class="w-4 h-4"></i>
+        <span>หน้าแรก</span>
+      </button>
+      <button onclick="navigateTo('children'); toggleMobileMenu()" class="w-full text-left px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-brand-soft flex items-center gap-2">
+        <i data-lucide="users" class="w-4 h-4"></i>
+        <span>เด็กของฉัน</span>
+      </button>
+      <button onclick="navigateTo('assessments'); toggleMobileMenu()" class="w-full text-left px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-brand-soft flex items-center gap-2">
+        <i data-lucide="clipboard-check" class="w-4 h-4"></i>
+        <span>แบบประเมิน</span>
+      </button>
+      <button onclick="navigateTo('history'); toggleMobileMenu()" class="w-full text-left px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-brand-soft flex items-center gap-2">
+        <i data-lucide="history" class="w-4 h-4"></i>
+        <span>ประวัติการประเมิน</span>
+      </button>
+      <button onclick="navigateTo('account'); toggleMobileMenu()" class="w-full text-left px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-brand-soft flex items-center gap-2">
+        <i data-lucide="user" class="w-4 h-4"></i>
+        <span>บัญชีผู้ใช้</span>
+      </button>
+      <button onclick="confirmUserLogout(); toggleMobileMenu()" class="w-full text-left px-3 py-2 rounded-md text-sm font-medium text-rose-600 hover:bg-rose-50 flex items-center gap-2">
+        <i data-lucide="log-out" class="w-4 h-4"></i>
+        <span>ออกจากระบบ</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+    <!-- 0. VIEW: STANDALONE DEDICATED LOGIN (PARENT & TEACHER) -->
+    <section id="view-login" class="max-w-md mx-auto py-4 sm:py-8 space-y-5 animate-scale-up">
+      <div class="bg-white rounded-3xl p-6 sm:p-8 shadow-xl border border-gray-100 space-y-5">
+        
+        <!-- Header -->
+        <div class="text-center space-y-2">
+          <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-brand-purple to-brand-light text-white mx-auto flex items-center justify-center shadow-lg shadow-purple-200">
+            <i data-lucide="sparkles" class="w-7 h-7"></i>
+          </div>
+          <div>
+            <h1 class="text-xl font-bold text-gray-800">เข้าสู่ระบบ GrowWise</h1>
+            <p class="text-xs text-gray-500 mt-0.5">เติบโตอย่างเข้าใจ ในทุกก้าว</p>
+          </div>
+          <div class="inline-block bg-purple-50 text-brand-purple text-[10px] font-bold px-3 py-1 rounded-full border border-purple-200">
+            เว็บแอปสำหรับผู้ปกครองและคุณครู (User Web App)
+          </div>
+        </div>
+
+        <!-- Role Selection Tabs -->
+        <div>
+          <label class="block text-xs font-semibold text-gray-700 mb-1.5">เลือกบทบาทการเข้าใช้งาน:</label>
+          <div class="grid grid-cols-2 gap-2 bg-gray-100 p-1 rounded-2xl text-xs">
+            <button type="button" id="tab-login-parent" onclick="switchLoginRoleTab('parent')" class="py-2.5 px-3 rounded-xl font-bold transition flex items-center justify-center gap-1.5 bg-white text-brand-purple shadow-sm">
+              <span>👨‍👩‍👦 ผู้ปกครอง (Parent)</span>
+            </button>
+            <button type="button" id="tab-login-teacher" onclick="switchLoginRoleTab('teacher')" class="py-2.5 px-3 rounded-xl font-semibold transition flex items-center justify-center gap-1.5 text-gray-600 hover:text-gray-900">
+              <span>👩‍🏫 คุณครู (Teacher)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Role Description Banner -->
+        <div id="login-role-banner" class="p-3.5 rounded-2xl bg-purple-50 border border-purple-100 text-xs text-purple-900 flex items-start gap-2.5">
+          <i data-lucide="info" class="w-4 h-4 text-brand-purple flex-shrink-0 mt-0.5"></i>
+          <div id="login-role-desc">
+            <strong>โหมดผู้ปกครอง:</strong> จัดการข้อมูลเด็ก ติดตามประวัติพัฒนาการ และมอบสิทธิ์การประเมินให้คุณครู
+          </div>
+        </div>
+
+        <!-- Login Form -->
+        <form onsubmit="handleLoginSubmit(event)" class="space-y-3.5 text-xs">
+          <div>
+            <label class="block text-gray-700 font-medium mb-1">อีเมลผู้ใช้งาน</label>
+            <input type="email" id="login-email" required placeholder="กรุณากรอกอีเมล เช่น name@example.com" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-brand-purple">
+          </div>
+          <div>
+            <label class="block text-gray-700 font-medium mb-1">รหัสผ่าน</label>
+            <input type="password" id="login-password" required placeholder="กรุณากรอกรหัสผ่าน" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-brand-purple">
+          </div>
+          <div class="flex items-center justify-between text-[11px]">
+            <label class="flex items-center gap-1.5 text-gray-500">
+              <input type="checkbox" checked class="rounded text-brand-purple"> จดจำการเข้าสู่ระบบ
+            </label>
+            <button type="button" onclick="openForgotModal()" class="text-brand-purple hover:underline">ลืมรหัสผ่าน?</button>
+          </div>
+          <button type="submit" id="btn-login-submit" class="w-full bg-brand-purple hover:bg-brand-dark text-white py-3 rounded-xl font-bold shadow-md transition flex items-center justify-center gap-2 text-sm">
+            <i data-lucide="log-in" class="w-4 h-4"></i>
+            <span id="login-submit-label">เข้าสู่ระบบในบทบาทผู้ปกครอง</span>
+          </button>
+          <button type="button" onclick="simulateGoogleLogin()" class="w-full bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 py-2.5 rounded-xl font-medium flex items-center justify-center gap-2 transition">
+            <i data-lucide="globe" class="w-4 h-4 text-rose-500"></i>
+            <span>เข้าสู่ระบบด้วย Google</span>
+          </button>
+        </form>
+
+        <!-- Guest Mode & Register Actions -->
+        <div class="pt-3 border-t border-gray-100 flex items-center justify-between text-xs">
+          <button type="button" onclick="openRegisterModal()" class="text-brand-purple hover:underline font-semibold">
+            สมัครสมาชิกใหม่
+          </button>
+          <button type="button" onclick="proceedGuestMode()" class="text-gray-500 hover:text-gray-800 font-medium flex items-center gap-1">
+            <span>ใช้งานโดยไม่สมัคร (Guest)</span>
+            <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+
+        <!-- Link to Admin Portal -->
+        <div class="pt-3 border-t border-gray-100 text-center">
+          <a href="http://localhost:3001" target="_blank" class="text-xs text-slate-500 hover:text-brand-purple transition inline-flex items-center gap-1.5">
+            <span>สำหรับเจ้าหน้าที่หรือแพทย์ผู้เชี่ยวชาญ เข้าสู่ระบบที่ GrowWise Admin (Port 3001)</span>
+            <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+          </a>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- 1. VIEW: HOME / DASHBOARD -->
+    <section id="view-home" class="hidden space-y-8">
+      <!-- Welcome Hero Card -->
+      <div class="bg-gradient-to-r from-brand-purple to-brand-light rounded-3xl p-6 sm:p-8 text-white shadow-lg relative overflow-hidden">
+        <div class="relative z-10 max-w-2xl">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur-sm text-xs font-semibold mb-3">
+            <i data-lucide="heart" class="w-3.5 h-3.5"></i>
+            <span>คัดกรองและส่งเสริมพัฒนาการอย่างตรงจุด</span>
+          </div>
+          <h1 class="text-2xl sm:text-3xl font-bold mb-2">GrowWise — เติบโตอย่างเข้าใจ ในทุกก้าว</h1>
+          <p class="text-white/90 text-sm sm:text-base leading-relaxed mb-6">
+            ร่วมติดตามการเติบโตและพัฒนาการของเด็กด้วยเครื่องมือประเมินมาตรฐาน พร้อมรับคำแนะนำเบื้องต้นและการประสานงานระหว่างบ้านและโรงเรียน
+          </p>
+          <div class="flex flex-wrap gap-3">
+            <button onclick="navigateTo('assessments')" class="bg-white text-brand-purple hover:bg-gray-100 font-semibold px-5 py-2.5 rounded-xl text-sm shadow-md transition flex items-center gap-2">
+              <i data-lucide="play-circle" class="w-4 h-4"></i>
+              <span>เริ่มทำแบบประเมิน</span>
+            </button>
+            <button onclick="openAddChildModal()" class="bg-brand-dark/40 hover:bg-brand-dark/60 text-white font-medium px-4 py-2.5 rounded-xl text-sm border border-white/20 transition flex items-center gap-2">
+              <i data-lucide="user-plus" class="w-4 h-4"></i>
+              <span>เพิ่มข้อมูลเด็ก</span>
+            </button>
+            <button onclick="openGuestModal()" class="bg-white/10 hover:bg-white/20 text-white font-medium px-4 py-2.5 rounded-xl text-sm border border-white/20 transition flex items-center gap-1.5">
+              <i data-lucide="user-check" class="w-4 h-4"></i>
+              <span>ใช้งานโดยไม่สมัคร</span>
+            </button>
+          </div>
+        </div>
+        <div class="absolute right-0 bottom-0 opacity-10 pointer-events-none transform translate-x-8 translate-y-8">
+          <i data-lucide="sparkles" class="w-96 h-96"></i>
+        </div>
+      </div>
+
+      <!-- Section: Children Cards -->
+      <div>
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-2">
+            <h2 class="text-lg font-bold text-gray-800">เด็กในความดูแล</h2>
+            <span class="text-xs bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full font-medium" id="home-children-count">0 คน</span>
+          </div>
+          <button onclick="openAddChildModal()" class="text-sm font-semibold text-brand-purple hover:text-brand-dark flex items-center gap-1 transition">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i>
+            <span>เพิ่มเด็ก</span>
+          </button>
+        </div>
+        <div id="home-children-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <!-- Section: Recommended Assessments -->
+      <div>
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h2 class="text-lg font-bold text-gray-800">แบบประเมินที่เหมาะสม</h2>
+            <p class="text-xs text-gray-500">คัดกรองตามช่วงอายุและบทบาทผู้ประเมิน</p>
+          </div>
+          <button onclick="navigateTo('assessments')" class="text-sm font-semibold text-brand-purple hover:text-brand-dark flex items-center gap-1">
+            <span>ดูทั้งหมด</span>
+            <i data-lucide="chevron-right" class="w-4 h-4"></i>
+          </button>
+        </div>
+        <div id="home-assessments-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <!-- Section: Clinical Disclaimer Footer Box -->
+      <div class="bg-purple-50 border border-purple-100 rounded-2xl p-4 flex items-start gap-3 text-brand-purple">
+        <i data-lucide="info" class="w-5 h-5 flex-shrink-0 mt-0.5"></i>
+        <div class="text-xs leading-relaxed">
+          <span class="font-bold">ข้อกำหนดสำคัญทางการแพทย์:</span> ผลการคัดกรองในระบบ GrowWise เป็นการประเมินเบื้องต้นเพื่อสังเกตสัญญาณเตือนด้านพฤติกรรมและการเรียนรู้ <strong>ไม่ใช่การวินิจฉัยโรคทางการแพทย์</strong> หากพบข้อกังวล ควรนำผลประเมินปรึกษากุมารแพทย์หรือผู้เชี่ยวชาญด้านจิตเวชเด็กและวัยรุ่น
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. VIEW: CHILDREN MANAGEMENT -->
+    <section id="view-children" class="hidden space-y-6">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-200 pb-4">
+        <div>
+          <h1 class="text-2xl font-bold text-gray-800">เด็กของฉัน</h1>
+          <p class="text-sm text-gray-500">จัดการข้อมูลเด็ก โปรไฟล์ และการเชื่อมโยงสิทธิ์การประเมินกับคุณครู</p>
+        </div>
+        <button onclick="openAddChildModal()" class="bg-brand-purple hover:bg-brand-dark text-white font-medium px-4 py-2.5 rounded-xl text-sm shadow-sm transition flex items-center justify-center gap-2">
+          <i data-lucide="user-plus" class="w-4 h-4"></i>
+          <span>เพิ่มข้อมูลเด็กใหม่</span>
+        </button>
+      </div>
+
+      <div id="children-full-list" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Rendered by JS -->
+      </div>
+    </section>
+
+    <!-- 3. VIEW: ASSESSMENTS LIST -->
+    <section id="view-assessments" class="hidden space-y-6">
+      <div class="border-b border-gray-200 pb-4">
+        <h1 class="text-2xl font-bold text-gray-800">แบบประเมินและคัดกรอง</h1>
+        <p class="text-sm text-gray-500">เลือกเครื่องมือที่ผ่านการรับรองตามช่วงอายุและบทบาทผู้ประเมิน</p>
+      </div>
+
+      <!-- Filters & Child Selector -->
+      <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-200 flex flex-wrap items-center justify-between gap-4">
+        <div class="flex items-center gap-3 w-full sm:w-auto">
+          <label class="text-xs font-semibold text-gray-600 whitespace-nowrap">ประเมินสำหรับเด็ก:</label>
+          <select id="assessment-child-select" onchange="filterAssessmentsByChild(this.value)" class="bg-gray-50 border border-gray-300 text-gray-800 text-sm rounded-lg px-3 py-1.5 focus:ring-brand-purple focus:border-brand-purple">
+            <!-- Populated by JS -->
+          </select>
+        </div>
+        <div class="flex items-center gap-2 text-xs text-gray-500">
+          <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+          <span>แสดงเฉพาะชุดที่เผยแพร่แล้ว (Published)</span>
+        </div>
+      </div>
+
+      <div id="assessments-full-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Rendered by JS -->
+      </div>
+    </section>
+
+    <!-- 4. VIEW: ASSESSMENT RUNNER (TAKING ASSESSMENT) -->
+    <section id="view-runner" class="hidden space-y-6 max-w-4xl mx-auto">
+      <!-- Top Status Header -->
+      <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-200 space-y-3">
+        <div class="flex items-center justify-between">
+          <button onclick="confirmExitAssessment()" class="text-xs font-medium text-gray-500 hover:text-gray-800 flex items-center gap-1 transition">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i>
+            <span>ย้อนกลับ</span>
+          </button>
+          <span class="text-xs font-bold text-brand-purple px-2.5 py-1 rounded-full bg-brand-soft" id="runner-assessment-code">KUS-SI-1</span>
+        </div>
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <h1 class="text-xl font-bold text-gray-800" id="runner-assessment-title">แบบประเมินพฤติกรรมสมาธิสั้น (ADHD)</h1>
+            <p class="text-xs text-gray-500" id="runner-child-info">ประเมินเด็ก: น้องภูมิ (อายุ ณ วันประเมิน: 7 ปี 2 เดือน) | ผู้ตอบ: คุณครูนิภา</p>
+          </div>
+          <div class="text-right">
+            <div class="text-xs text-gray-500 font-medium">ความคืบหน้า</div>
+            <div class="text-sm font-bold text-brand-purple" id="runner-progress-text">0 / 30 ข้อ (0%)</div>
+          </div>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
+          <div id="runner-progress-bar" class="bg-brand-purple h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+        </div>
+      </div>
+
+      <!-- Privacy Consent Box (Shown on start) -->
+      <div id="runner-consent-box" class="bg-white rounded-2xl p-6 shadow-sm border border-brand-accent space-y-4">
+        <div class="flex items-center gap-2 text-brand-purple font-bold">
+          <i data-lucide="shield-check" class="w-5 h-5"></i>
+          <span>ประกาศความเป็นส่วนตัวและความยินยอม (PDPA Privacy Notice)</span>
+        </div>
+        <p class="text-xs sm:text-sm text-gray-600 leading-relaxed">
+          ข้อมูลการประเมินนี้จะถูกจัดเก็บอย่างปลอดภัยตามพระราชบัญญัติคุ้มครองข้อมูลส่วนบุคคล เพื่อประโยชน์ในการติดตามพัฒนาการเด็กและการประสานงานระหว่างผู้ปกครองและคุณครู ผลการคัดกรองนี้ไม่ถือเป็นการวินิจฉัยโรคทางการแพทย์
+        </p>
+        <label class="flex items-start gap-3 cursor-pointer pt-2">
+          <input type="checkbox" id="consent-checkbox" checked class="mt-1 w-4 h-4 text-brand-purple rounded border-gray-300 focus:ring-brand-purple">
+          <span class="text-xs sm:text-sm text-gray-700 font-medium">ข้าพเจ้ารับทราบวัตถุประสงค์ ยินยอมให้ประมวลผลข้อมูลการประเมินเพื่อติดตามพัฒนาการเด็ก และเข้าใจว่าผลนี้เป็นการคัดกรองเบื้องต้น</span>
+        </label>
+      </div>
+
+      <!-- Questions Container -->
+      <div id="runner-questions-container" class="space-y-6">
+        <!-- Rendered by JS -->
+      </div>
+
+      <!-- Bottom Action Buttons -->
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-200 flex flex-wrap items-center justify-between gap-3 sticky bottom-4 z-30">
+        <button onclick="saveDraft()" class="px-4 py-2 rounded-xl border border-gray-300 text-gray-700 hover:bg-gray-50 text-xs font-semibold flex items-center gap-1.5 transition">
+          <i data-lucide="save" class="w-4 h-4"></i>
+          <span>บันทึกร่าง</span>
+        </button>
+        <div class="flex items-center gap-3">
+          <span id="runner-validation-msg" class="text-xs text-rose-500 font-medium hidden">กรุณาตอบคำถามให้ครบทุกข้อก่อนส่ง</span>
+          <button onclick="submitAssessment()" class="bg-brand-purple hover:bg-brand-dark text-white px-6 py-2.5 rounded-xl text-sm font-semibold shadow-md transition flex items-center gap-2">
+            <i data-lucide="send" class="w-4 h-4"></i>
+            <span>ส่งแบบประเมินและดูผล</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. VIEW: ASSESSMENT RESULT -->
+    <section id="view-result" class="hidden space-y-6 max-w-4xl mx-auto">
+      <!-- Result Card -->
+      <div class="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-gray-200 space-y-6">
+        <!-- Top Status Banner -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 pb-5">
+          <div>
+            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-purple-100 text-brand-purple mb-2">
+              <i data-lucide="check-circle" class="w-3.5 h-3.5"></i>
+              <span>บันทึกผลการคัดกรองสำเร็จ</span>
+            </div>
+            <h1 class="text-2xl font-bold text-gray-800" id="result-title">KUS-SI 1: แบบประเมินพฤติกรรมสมาธิสั้น (ADHD)</h1>
+            <p class="text-xs text-gray-500" id="result-meta">วันที่ประเมิน: 2026-11-08 | เด็ก: น้องภูมิ (อายุ ณ วันประเมิน: 7 ปี 2 เดือน) | ผู้ตอบ: คุณครูนิภา</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="window.print()" class="px-3 py-2 rounded-xl border border-gray-200 text-xs font-medium text-gray-600 hover:bg-gray-50 flex items-center gap-1">
+              <i data-lucide="printer" class="w-4 h-4"></i>
+              <span>พิมพ์รายงาน</span>
+            </button>
+            <button onclick="navigateTo('history')" class="bg-brand-purple hover:bg-brand-dark text-white px-4 py-2 rounded-xl text-xs font-semibold transition">
+              ดูประวัติทั้งหมด
+            </button>
+          </div>
+        </div>
+
+        <!-- Mandatory Clinical Disclaimer -->
+        <div class="bg-rose-50 border-l-4 border-rose-500 p-4 rounded-r-xl">
+          <div class="flex items-center gap-2 text-rose-800 font-bold text-sm mb-1">
+            <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+            <span>ข้อความระบุตามมาตรฐานวิชาชีพ:</span>
+          </div>
+          <p class="text-rose-700 text-xs sm:text-sm font-semibold">
+            “ผลนี้เป็นการคัดกรองเบื้องต้น ไม่ใช่การวินิจฉัย”
+          </p>
+        </div>
+
+        <!-- Overall Score Summary -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div class="bg-gray-50 p-4 rounded-2xl border border-gray-200 text-center">
+            <div class="text-xs text-gray-500 font-medium">คะแนนดิบรวม</div>
+            <div class="text-3xl font-extrabold text-brand-purple mt-1" id="result-total-score">58</div>
+            <div class="text-xs text-gray-400 mt-1" id="result-max-score">คะแนนเต็ม 90</div>
+          </div>
+          <div class="bg-gray-50 p-4 rounded-2xl border border-gray-200 text-center sm:col-span-2 flex flex-col justify-center items-center">
+            <div class="text-xs text-gray-500 font-medium mb-1">การแปลผลมาตรฐาน (T-Score)</div>
+            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-100 text-brand-purple font-bold text-xs">
+              <i data-lucide="clock" class="w-3.5 h-3.5"></i>
+              <span id="result-status-badge">รอผู้เชี่ยวชาญตรวจและแปลผล</span>
+            </div>
+            <p class="text-[11px] text-gray-500 mt-2 max-w-sm">
+              ระบบแสดงคะแนนดิบตามแบบประเมิน โดยยังไม่มีการแปลงเป็นเกณฑ์ที (T-Score) เนื่องจากอยู่ระหว่างรอเอกสารตารางมาตรฐานที่ตรวจสอบแล้วจากแพทย์
+            </p>
+          </div>
+        </div>
+
+        <!-- Domain Breakdown Cards -->
+        <div>
+          <h3 class="text-sm font-bold text-gray-800 mb-3">คะแนนดิบจำแนกรายด้าน (Domain Breakdown)</h3>
+          <div id="result-domains-container" class="space-y-3">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+
+        <!-- Recommendations Box -->
+        <div class="bg-brand-soft rounded-2xl p-5 border border-brand-accent space-y-2">
+          <h3 class="text-sm font-bold text-brand-purple flex items-center gap-2">
+            <i data-lucide="lightbulb" class="w-4 h-4"></i>
+            <span>ข้อแนะนำเบื้องต้นและการดูแล</span>
+          </h3>
+          <ul id="result-recommendations-list" class="text-xs sm:text-sm text-gray-700 space-y-1.5 list-disc list-inside">
+            <!-- Rendered by JS -->
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. VIEW: HISTORY & TRENDS -->
+    <section id="view-history" class="hidden space-y-6">
+      <div class="border-b border-gray-200 pb-4">
+        <h1 class="text-2xl font-bold text-gray-800">ประวัติการประเมิน</h1>
+        <p class="text-sm text-gray-500">ติดตามบันทึกและแนวโน้มพัฒนาการย้อนหลังของเด็ก</p>
+      </div>
+
+      <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-200 flex flex-wrap items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <label class="text-xs font-semibold text-gray-600">เลือกเด็ก:</label>
+          <select id="history-child-select" onchange="loadChildHistory(this.value)" class="bg-gray-50 border border-gray-300 text-gray-800 text-sm rounded-lg px-3 py-1.5 focus:ring-brand-purple focus:border-brand-purple">
+            <!-- Populated by JS -->
+          </select>
+        </div>
+      </div>
+
+      <div id="history-list-container" class="space-y-4">
+        <!-- Rendered by JS -->
+      </div>
+    </section>
+
+    <!-- 7. VIEW: ACCOUNT & PDPA -->
+    <section id="view-account" class="hidden space-y-6 max-w-3xl mx-auto">
+      <div class="border-b border-gray-200 pb-4">
+        <h1 class="text-2xl font-bold text-gray-800">บัญชีผู้ใช้และความเป็นส่วนตัว</h1>
+        <p class="text-sm text-gray-500">จัดการข้อมูลส่วนตัว ความยินยอม และสิทธิเกี่ยวกับข้อมูลส่วนบุคคล (PDPA)</p>
+      </div>
+
+      <!-- Account Info Card -->
+      <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-200 space-y-4">
+        <div class="flex items-center gap-4">
+          <div class="w-16 h-16 rounded-full bg-brand-purple text-white flex items-center justify-center text-2xl font-bold">
+            <span id="account-avatar-char">-</span>
+          </div>
+          <div>
+            <h2 class="text-lg font-bold text-gray-800" id="account-full-name">-</h2>
+            <p class="text-xs text-gray-500" id="account-email">-</p>
+            <div class="mt-1 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-brand-purple" id="account-role-tag">
+              บทบาท: -
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-gray-100 text-xs">
+          <div>
+            <label class="text-gray-500 font-medium">เบอร์โทรศัพท์ติดต่อ</label>
+            <div class="font-semibold text-gray-800 mt-0.5" id="account-phone">-</div>
+          </div>
+          <div>
+            <label class="text-gray-500 font-medium">สังกัด / โรงเรียน</label>
+            <div class="font-semibold text-gray-800 mt-0.5" id="account-org">-</div>
+          </div>
+        </div>
+
+        <div class="pt-3 border-t border-gray-100 flex flex-wrap items-center justify-between gap-3">
+          <div class="flex gap-2">
+            <button onclick="openLoginModal()" class="px-3 py-1.5 rounded-lg border border-gray-300 text-xs font-semibold text-gray-700 hover:bg-gray-50">
+              สลับบัญชีเข้าสู่ระบบ
+            </button>
+            <button onclick="openRegisterModal()" class="px-3 py-1.5 rounded-lg bg-brand-soft text-brand-purple text-xs font-semibold hover:bg-purple-100">
+              สมัครบัญชีใหม่
+            </button>
+          </div>
+          <button onclick="confirmUserLogout()" class="px-4 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-semibold flex items-center gap-1.5 transition">
+            <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
+            <span>ออกจากระบบ</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- PDPA & Rights Card -->
+      <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-200 space-y-4">
+        <div class="flex items-center gap-2 text-brand-purple font-bold">
+          <i data-lucide="shield" class="w-5 h-5"></i>
+          <span>การจัดการความยินยอมและสิทธิข้อมูลส่วนบุคคล (PDPA)</span>
+        </div>
+        <p class="text-xs text-gray-600 leading-relaxed">
+          ท่านสามารถขอใช้สิทธิเข้าถึงข้อมูล แก้ไขข้อมูล ขอลบข้อมูล หรือเพิกถอนความยินยอมในการประมวลผลข้อมูลพัฒนาการเด็กได้ตลอดเวลา
+        </p>
+        <div class="flex flex-wrap gap-3 pt-2">
+          <button onclick="showToast('ส่งคำร้องขอสำเนาข้อมูลส่วนบุคคลของท่านไปยังเจ้าหน้าที่คุ้มครองข้อมูลเรียบร้อยแล้ว (ตามระเบียบ PDPA)', 'success')" class="px-4 py-2 rounded-xl border border-gray-300 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition">
+            ขอสำเนาข้อมูลส่วนบุคคล
+          </button>
+          <button onclick="showToast('บันทึกคำร้องขอเพิกถอนความยินยอมเรียบร้อยแล้ว เจ้าหน้าที่จะดำเนินการตามสิทธิ PDPA ภายในระยะเวลาที่กฎหมายกำหนด', 'info')" class="px-4 py-2 rounded-xl border border-rose-200 text-xs font-semibold text-rose-600 hover:bg-rose-50 transition">
+            ขอเพิกถอนความยินยอม / ลบบัญชี
+          </button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODAL: ADD / EDIT CHILD -->
+  <div id="add-child-modal" class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-xl space-y-5 animate-scale-up">
+      <div class="flex items-center justify-between border-b border-gray-100 pb-3">
+        <div class="flex items-center gap-2 text-brand-purple font-bold text-lg">
+          <i data-lucide="user-plus" class="w-5 h-5"></i>
+          <span>เพิ่มข้อมูลเด็กใหม่</span>
+        </div>
+        <button onclick="closeAddChildModal()" class="text-gray-400 hover:text-gray-600">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form onsubmit="handleSaveChild(event)" class="space-y-4 text-xs sm:text-sm">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-gray-700 font-medium mb-1">ชื่อจริง <span class="text-rose-500">*</span></label>
+            <input type="text" id="new-child-firstname" required placeholder="เช่น ภูมิภัทร" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 focus:ring-brand-purple focus:border-brand-purple">
+          </div>
+          <div>
+            <label class="block text-gray-700 font-medium mb-1">นามสกุล <span class="text-rose-500">*</span></label>
+            <input type="text" id="new-child-lastname" required placeholder="เช่น ใจดี" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 focus:ring-brand-purple focus:border-brand-purple">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-gray-700 font-medium mb-1">ชื่อเล่น</label>
+            <input type="text" id="new-child-nickname" placeholder="เช่น น้องภูมิ" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 focus:ring-brand-purple focus:border-brand-purple">
+          </div>
+          <div>
+            <label class="block text-gray-700 font-medium mb-1">เพศ</label>
+            <select id="new-child-gender" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 focus:ring-brand-purple focus:border-brand-purple">
+              <option value="male">ชาย</option>
+              <option value="female">หญิง</option>
+              <option value="other">อื่นๆ / ไม่ระบุ</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-gray-700 font-medium mb-1">วัน/เดือน/ปี เกิด <span class="text-rose-500">*</span></label>
+          <input type="date" id="new-child-birthdate" required class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 focus:ring-brand-purple focus:border-brand-purple">
+          <p class="text-[11px] text-gray-400 mt-1">ใช้สำหรับคำนวณอายุอัตโนมัติ ณ วันที่ทำแบบประเมิน</p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-gray-700 font-medium mb-1">โรงเรียน / สถานศึกษา</label>
+            <input type="text" id="new-child-school" placeholder="เช่น รร.สาธิตพัฒนาการ" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 focus:ring-brand-purple focus:border-brand-purple">
+          </div>
+          <div>
+            <label class="block text-gray-700 font-medium mb-1">ระดับชั้น</label>
+            <input type="text" id="new-child-grade" placeholder="เช่น ป.2" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 focus:ring-brand-purple focus:border-brand-purple">
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
+          <button type="button" onclick="closeAddChildModal()" class="px-4 py-2 rounded-xl text-gray-600 hover:bg-gray-100 text-xs font-semibold">
+            ยกเลิก
+          </button>
+          <button type="submit" class="bg-brand-purple hover:bg-brand-dark text-white px-5 py-2 rounded-xl text-xs font-semibold shadow-md transition">
+            บันทึกข้อมูลเด็ก
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: ONBOARDING / WALKTHROUGH -->
+  <div id="onboarding-modal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl space-y-6">
+      <div class="text-center space-y-2">
+        <div class="w-12 h-12 rounded-2xl bg-brand-soft text-brand-purple flex items-center justify-center mx-auto">
+          <i data-lucide="compass" class="w-6 h-6"></i>
+        </div>
+        <h2 class="text-xl font-bold text-gray-800">แนะนำการใช้งาน GrowWise</h2>
+        <p class="text-xs text-gray-500">เติบโตอย่างเข้าใจ ในทุกก้าว</p>
+      </div>
+
+      <div class="space-y-4 text-xs sm:text-sm text-gray-700">
+        <div class="flex items-start gap-3 p-3 bg-purple-50 rounded-2xl border border-purple-100">
+          <span class="w-6 h-6 rounded-full bg-brand-purple text-white flex items-center justify-center font-bold text-xs flex-shrink-0">1</span>
+          <div>
+            <strong class="text-brand-purple block">เลือกหรือเพิ่มโปรไฟล์เด็ก</strong>
+            <span>ระบบจะคำนวณอายุอัตโนมัติ ณ วันที่ประเมิน และคัดกรองแบบประเมินที่เหมาะสมกับช่วงอายุและบทบาท</span>
+          </div>
+        </div>
+
+        <div class="flex items-start gap-3 p-3 bg-purple-50 rounded-2xl border border-purple-100">
+          <span class="w-6 h-6 rounded-full bg-brand-purple text-white flex items-center justify-center font-bold text-xs flex-shrink-0">2</span>
+          <div>
+            <strong class="text-brand-purple block">ตอบคำถามตามพฤติกรรมจริง</strong>
+            <span>สามารถบันทึกร่างและทำต่อได้ ตัวเลือกคะแนน 0-3 ช่วยสะท้อนความถี่ของพฤติกรรม</span>
+          </div>
+        </div>
+
+        <div class="flex items-start gap-3 p-3 bg-purple-50 rounded-2xl border border-purple-100">
+          <span class="w-6 h-6 rounded-full bg-brand-purple text-white flex items-center justify-center font-bold text-xs flex-shrink-0">3</span>
+          <div>
+            <strong class="text-brand-purple block">ดูผลคะแนนและติดตามพัฒนาการ</strong>
+            <span>ผลการคัดกรองเบื้องต้นไม่ใช่การวินิจฉัย แต่เป็นข้อมูลสำคัญในการปรึกษาแพทย์และคุณครู</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-3 pt-2">
+        <button onclick="closeOnboardingModal()" class="w-full bg-brand-purple hover:bg-brand-dark text-white py-2.5 rounded-xl text-xs font-semibold shadow transition">
+          เข้าใจแล้ว เริ่มใช้งานได้เลย
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: GUEST MODE NOTICE -->
+  <div id="guest-modal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 text-center">
+      <div class="w-12 h-12 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center mx-auto">
+        <i data-lucide="info" class="w-6 h-6"></i>
+      </div>
+      <h3 class="text-lg font-bold text-gray-800">ข้อชี้แจงการใช้งานโดยไม่สมัครสมาชิก (Guest Mode)</h3>
+      <p class="text-xs text-gray-600 leading-relaxed text-left bg-amber-50 p-3.5 rounded-xl border border-amber-200">
+        • การใช้งานในโหมด Guest จะไม่มีการผูกบัญชีถาวร<br>
+        • ข้อมูลเด็กและประวัติการประเมินจะถูกเก็บไว้เฉพาะในเบราว์เซอร์ปัจจุบันเท่านั้น<br>
+        • ไม่สามารถเข้าถึงหรือดูผลย้อนหลังข้ามอุปกรณ์ได้<br>
+        • หากล้างประวัติการท่องเว็บ ข้อมูลการประเมินจะสูญหาย
+      </p>
+      <div class="flex gap-2 pt-2">
+        <button onclick="closeGuestModal()" class="flex-1 px-4 py-2 rounded-xl border border-gray-300 text-xs font-semibold text-gray-700 hover:bg-gray-50">
+          กลับไปสมัครสมาชิก
+        </button>
+        <button onclick="proceedGuestMode()" class="flex-1 bg-brand-purple hover:bg-brand-dark text-white px-4 py-2 rounded-xl text-xs font-semibold shadow transition">
+          รับทราบและเริ่มใช้งาน
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: LOGOUT CONFIRMATION -->
+  <div id="user-logout-modal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-4 text-center">
+      <div class="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 mx-auto flex items-center justify-center shadow-inner">
+        <i data-lucide="log-out" class="w-6 h-6"></i>
+      </div>
+      <div>
+        <h3 class="text-base font-bold text-gray-800">ยืนยันการออกจากระบบ</h3>
+        <p class="text-xs text-gray-500 mt-1">คุณต้องการออกจากระบบ GrowWise หรือไม่?</p>
+      </div>
+      <div class="flex items-center justify-center gap-3 pt-2">
+        <button type="button" onclick="closeUserLogoutModal()" class="px-4 py-2 rounded-xl border border-gray-300 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition w-full">
+          ยกเลิก
+        </button>
+        <button type="button" onclick="proceedUserLogout()" class="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold transition shadow-md w-full">
+          ออกจากระบบ
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: REGISTER -->
+  <div id="register-modal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b pb-2">
+        <h3 class="text-base font-bold text-gray-800">สมัครสมาชิก GrowWise</h3>
+        <button onclick="closeRegisterModal()" class="text-gray-400 hover:text-gray-600"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+      <form onsubmit="handleRegisterSubmit(event)" class="space-y-3 text-xs">
+        <div>
+          <label class="block text-gray-700 font-medium mb-1">บทบาทของท่าน</label>
+          <select id="reg-role" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2">
+            <option value="parent">ผู้ปกครอง (Parent)</option>
+            <option value="teacher">คุณครู (Teacher)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-gray-700 font-medium mb-1">ชื่อ - นามสกุล</label>
+          <input type="text" id="reg-name" required placeholder="เช่น อภิสิทธิ์ วงศ์ดี" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2">
+        </div>
+        <div>
+          <label class="block text-gray-700 font-medium mb-1">อีเมล</label>
+          <input type="email" id="reg-email" required placeholder="example@email.com" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2">
+        </div>
+        <div>
+          <label class="block text-gray-700 font-medium mb-1">เบอร์โทรศัพท์</label>
+          <input type="text" id="reg-phone" placeholder="081-xxx-xxxx" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2">
+        </div>
+        <button type="submit" class="w-full bg-brand-purple hover:bg-brand-dark text-white py-2 rounded-xl font-semibold shadow transition">
+          สมัครสมาชิก
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: FORGOT PASSWORD -->
+  <div id="forgot-modal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b pb-2">
+        <h3 class="text-base font-bold text-gray-800">ลืมรหัสผ่าน</h3>
+        <button onclick="closeForgotModal()" class="text-gray-400 hover:text-gray-600"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+      <p class="text-xs text-gray-500 leading-relaxed">
+        กรอกอีเมลที่ลงทะเบียนไว้ ระบบจะสร้างลิงก์สำหรับตั้งรหัสผ่านใหม่แบบใช้ครั้งเดียว (มีอายุ 15 นาที)
+      </p>
+      <form onsubmit="handleForgotSubmit(event)" class="space-y-3 text-xs">
+        <div>
+          <label class="block text-gray-700 font-medium mb-1">อีเมลของคุณ</label>
+          <input type="email" id="forgot-email" required placeholder="dao.jaidee@gmail.com" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2">
+        </div>
+        <button type="submit" class="w-full bg-brand-purple hover:bg-brand-dark text-white py-2 rounded-xl font-semibold shadow transition">
+          ส่งลิงก์รีเซ็ตรหัสผ่าน
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="bg-white border-t border-gray-200 mt-auto py-6">
+    <div class="max-w-7xl mx-auto px-4 text-center space-y-2">
+      <div class="text-sm font-bold text-brand-purple">GrowWise — เติบโตอย่างเข้าใจ ในทุกก้าว</div>
+      <div class="text-xs text-gray-400">ระบบคัดกรองและส่งเสริมพัฒนาการเด็กเบื้องต้น | มาตรฐานความปลอดภัยข้อมูลสุขภาพและ PDPA</div>
+    </div>
+  </footer>
+
+  <!-- Application Logic & Integration Script -->
+  <script>
+    let state = {
+      currentUser: null,
+      children: [],
+      assessments: [],
+      activeChildId: null,
+      currentAssessment: null,
+      currentVersion: null,
+      runnerAnswers: {},
+      selectedResult: null,
+    };
+
+    // Initialize App
+    async function init() {
+      const savedUser = localStorage.getItem('growwise_user_email');
+      if (savedUser) {
+        try {
+          const res = await fetch('/api/auth/current-user');
+          const data = await res.json();
+          if (data && data.user) {
+            state.currentUser = data.user;
+            updateUserHeader();
+            await fetchChildren();
+            await fetchAssessments();
+            navigateTo('home');
+          } else {
+            state.currentUser = null;
+            localStorage.removeItem('growwise_user_email');
+            navigateTo('login');
+          }
+        } catch (e) {
+          state.currentUser = null;
+          navigateTo('login');
+        }
+      } else {
+        state.currentUser = null;
+        navigateTo('login');
+      }
+      lucide.createIcons();
+    }
+
+    // --- API Calls ---
+    async function fetchCurrentUser() {
+      try {
+        const res = await fetch('/api/auth/current-user');
+        const data = await res.json();
+        state.currentUser = data.user;
+        updateUserHeader();
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    async function switchRole(role) {
+      try {
+        const res = await fetch('/api/auth/switch-role', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ role })
+        });
+        const data = await res.json();
+        state.currentUser = data.user;
+        updateUserHeader();
+        await fetchChildren();
+        await fetchAssessments();
+        renderHome();
+        lucide.createIcons();
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    async function fetchChildren() {
+      try {
+        const res = await fetch('/api/children');
+        const data = await res.json();
+        state.children = data.children || [];
+        if (state.children.length > 0 && !state.activeChildId) {
+          state.activeChildId = state.children[0].id;
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    async function fetchAssessments() {
+      try {
+        const res = await fetch('/api/assessments');
+        const data = await res.json();
+        state.assessments = data.assessments || [];
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function updateUserHeader() {
+      if (!state.currentUser) return;
+      document.getElementById('user-name-display').innerText = state.currentUser.full_name;
+      document.getElementById('user-avatar-initial').innerText = state.currentUser.full_name.charAt(0);
+      
+      const roleNames = {
+        parent: 'ผู้ปกครอง',
+        teacher: 'คุณครู',
+        specialist: 'ผู้เชี่ยวชาญ',
+        admin: 'แอดมิน',
+        super_admin: 'Super Admin'
+      };
+      document.getElementById('user-role-badge').innerText = roleNames[state.currentUser.role] || state.currentUser.role;
+      document.getElementById('role-switcher').value = state.currentUser.role;
+
+      // Update account view
+      document.getElementById('account-full-name').innerText = state.currentUser.full_name;
+      document.getElementById('account-email').innerText = state.currentUser.email;
+      document.getElementById('account-role-tag').innerText = `บทบาท: ${roleNames[state.currentUser.role]}`;
+      document.getElementById('account-avatar-char').innerText = state.currentUser.full_name.charAt(0);
+      document.getElementById('account-org').innerText = state.currentUser.organization || 'บุคคลทั่วไป';
+      if (state.currentUser.phone_number) {
+        document.getElementById('account-phone').innerText = state.currentUser.phone_number;
+      }
+    }
+
+    // --- Toast Notification System ---
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      if (!container) return;
+      const toast = document.createElement('div');
+      toast.className = `p-4 rounded-2xl shadow-xl border text-xs font-semibold flex items-center gap-2.5 transform transition-all duration-300 translate-y-2 opacity-0 pointer-events-auto max-w-sm ${
+        type === 'success' ? 'bg-emerald-50 text-emerald-900 border-emerald-200 shadow-emerald-100' :
+        type === 'error' ? 'bg-rose-50 text-rose-900 border-rose-200 shadow-rose-100' :
+        type === 'warning' ? 'bg-amber-50 text-amber-900 border-amber-200 shadow-amber-100' :
+        'bg-white text-gray-800 border-purple-200 shadow-purple-100'
+      }`;
+      const iconName = type === 'success' ? 'check-circle-2' : type === 'error' ? 'alert-triangle' : type === 'warning' ? 'alert-circle' : 'info';
+      const iconColor = type === 'success' ? 'text-emerald-500' : type === 'error' ? 'text-rose-500' : type === 'warning' ? 'text-amber-500' : 'text-brand-purple';
+      toast.innerHTML = `
+        <i data-lucide="${iconName}" class="w-4 h-4 flex-shrink-0 ${iconColor}"></i>
+        <span>${message}</span>
+      `;
+      container.appendChild(toast);
+      lucide.createIcons();
+      requestAnimationFrame(() => {
+        toast.classList.remove('translate-y-2', 'opacity-0');
+      });
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+
+    // --- Navigation ---
+    function navigateTo(viewName) {
+      if (!state.currentUser && viewName !== 'login') {
+        viewName = 'login';
+      }
+
+      // Hide or show the main app header completely on login page
+      const header = document.getElementById('main-header');
+      if (viewName === 'login' || !state.currentUser) {
+        if (header) {
+          header.style.display = 'none';
+          header.classList.add('hidden');
+        }
+      } else {
+        if (header) {
+          header.style.display = 'block';
+          header.classList.remove('hidden');
+        }
+      }
+
+      const views = ['login', 'home', 'children', 'assessments', 'runner', 'result', 'history', 'account'];
+      views.forEach(v => {
+        const el = document.getElementById(`view-${v}`);
+        if (el) el.classList.add('hidden');
+      });
+
+      const target = document.getElementById(`view-${viewName}`);
+      if (target) target.classList.remove('hidden');
+
+      // Update active nav button
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        if (btn.getAttribute('data-nav') === viewName) {
+          btn.classList.add('bg-brand-soft', 'text-brand-purple');
+        } else {
+          btn.classList.remove('bg-brand-soft', 'text-brand-purple');
+        }
+      });
+
+      // Update Header Navigation elements depending on whether logged in / login view
+      const desktopNav = document.getElementById('main-desktop-nav');
+      const userDisplay = document.getElementById('user-display');
+      const btnLogout = document.getElementById('btn-header-logout');
+      const btnLogin = document.getElementById('btn-header-login');
+      const btnAccount = document.getElementById('btn-header-account');
+      const btnOnboarding = document.getElementById('btn-header-onboarding');
+      const btnMenu = document.getElementById('btn-header-menu');
+
+      if (viewName === 'login' || !state.currentUser) {
+        if (desktopNav) desktopNav.classList.add('hidden');
+        if (userDisplay) userDisplay.classList.add('hidden');
+        if (btnLogout) btnLogout.classList.add('hidden');
+        if (btnAccount) btnAccount.classList.add('hidden');
+        if (btnOnboarding) btnOnboarding.classList.add('hidden');
+        if (btnMenu) btnMenu.classList.add('hidden');
+        if (btnLogin) btnLogin.classList.remove('hidden');
+      } else {
+        if (desktopNav) desktopNav.classList.remove('hidden');
+        if (state.currentUser && userDisplay) userDisplay.classList.remove('hidden');
+        if (state.currentUser && btnLogout) btnLogout.classList.remove('hidden');
+        if (state.currentUser && btnAccount) btnAccount.classList.remove('hidden');
+        if (btnOnboarding) btnOnboarding.classList.remove('hidden');
+        if (btnMenu) btnMenu.classList.remove('hidden');
+        if (btnLogin) btnLogin.classList.add('hidden');
+      }
+
+      if (viewName === 'home') renderHome();
+      if (viewName === 'children') renderChildrenList();
+      if (viewName === 'assessments') renderAssessmentsList();
+      if (viewName === 'history') loadChildHistory(state.activeChildId);
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      lucide.createIcons();
+    }
+
+    function toggleMobileMenu() {
+      const menu = document.getElementById('mobile-menu');
+      menu.classList.toggle('hidden');
+    }
+
+    // --- Calculate Age Helper ---
+    function calculateAge(birthDateStr, targetDateStr = new Date().toISOString().split('T')[0]) {
+      const birth = new Date(birthDateStr);
+      const target = new Date(targetDateStr);
+      let years = target.getFullYear() - birth.getFullYear();
+      let months = target.getMonth() - birth.getMonth();
+      let days = target.getDate() - birth.getDate();
+      if (days < 0) months -= 1;
+      if (months < 0) { years -= 1; months += 12; }
+      return { years, months, text: `${years} ปี ${months} เดือน` };
+    }
+
+    // --- Render Home ---
+    function renderHome() {
+      // 1. Children grid
+      const countEl = document.getElementById('home-children-count');
+      countEl.innerText = `${state.children.length} คน`;
+
+      const grid = document.getElementById('home-children-grid');
+      if (state.children.length === 0) {
+        grid.innerHTML = `
+          <div class="col-span-full bg-white p-8 rounded-2xl border border-dashed border-gray-300 text-center space-y-3">
+            <i data-lucide="user-x" class="w-10 h-10 text-gray-400 mx-auto"></i>
+            <div class="text-sm font-semibold text-gray-700">ยังไม่มีข้อมูลเด็กในความดูแล</div>
+            <p class="text-xs text-gray-500">กรุณากดเพิ่มข้อมูลเด็กเพื่อเริ่มทำแบบประเมินและติดตามพัฒนาการ</p>
+            <button onclick="openAddChildModal()" class="bg-brand-purple text-white px-4 py-2 rounded-xl text-xs font-semibold">
+              เพิ่มเด็กคนแรก
+            </button>
+          </div>
+        `;
+      } else {
+        grid.innerHTML = state.children.map(child => {
+          const age = calculateAge(child.birth_date);
+          return `
+            <div class="bg-white rounded-2xl p-5 border border-gray-200 shadow-sm hover:shadow-md transition space-y-4">
+              <div class="flex items-start justify-between">
+                <div class="flex items-center gap-3">
+                  <div class="w-12 h-12 rounded-2xl bg-brand-soft text-brand-purple flex items-center justify-center font-bold text-lg">
+                    ${child.nickname ? child.nickname.charAt(0) : child.first_name.charAt(0)}
+                  </div>
+                  <div>
+                    <h3 class="font-bold text-gray-800 text-base">${child.first_name} ${child.last_name} (${child.nickname || '-'})</h3>
+                    <p class="text-xs text-brand-purple font-semibold mt-0.5">อายุ: ${age.text}</p>
+                  </div>
+                </div>
+                <span class="text-[10px] bg-purple-100 text-brand-purple font-bold px-2 py-0.5 rounded">
+                  ${child.gender === 'male' ? 'เด็กชาย' : 'เด็กหญิง'}
+                </span>
+              </div>
+              <div class="text-xs text-gray-500 space-y-1 bg-gray-50 p-2.5 rounded-xl">
+                <div>โรงเรียน: <span class="font-medium text-gray-700">${child.school_name || 'ไม่ระบุ'}</span></div>
+                <div>ระดับชั้น: <span class="font-medium text-gray-700">${child.grade_level || 'ไม่ระบุ'}</span></div>
+              </div>
+              <div class="flex items-center gap-2 pt-1">
+                <button onclick="startAssessmentForChild('${child.id}')" class="flex-1 bg-brand-purple hover:bg-brand-dark text-white py-2 rounded-xl text-xs font-semibold shadow-sm transition text-center">
+                  ทำแบบประเมิน
+                </button>
+                <button onclick="viewChildHistory('${child.id}')" class="px-3 py-2 rounded-xl border border-gray-200 text-xs font-semibold text-gray-600 hover:bg-gray-50 transition">
+                  ประวัติ
+                </button>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // 2. Assessments Grid
+      const asmGrid = document.getElementById('home-assessments-grid');
+      asmGrid.innerHTML = state.assessments.slice(0, 3).map(asm => `
+        <div class="bg-white rounded-2xl p-5 border border-gray-200 shadow-sm hover:shadow-md transition flex flex-col justify-between space-y-4">
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-bold text-brand-purple bg-brand-soft px-2.5 py-0.5 rounded">${asm.code}</span>
+              <span class="text-[11px] text-gray-500 flex items-center gap-1">
+                <i data-lucide="clock" class="w-3 h-3"></i>
+                ~${asm.estimated_time_minutes} นาที
+              </span>
+            </div>
+            <h3 class="font-bold text-gray-800 text-sm mb-1">${asm.title}</h3>
+            <p class="text-xs text-gray-500 line-clamp-2">${asm.description}</p>
+          </div>
+          <div class="pt-3 border-t border-gray-100 flex items-center justify-between">
+            <span class="text-[10px] text-gray-500">สำหรับ: ${asm.target_roles.includes('teacher') ? 'คุณครู' : 'ผู้ปกครอง'}</span>
+            <button onclick="openAssessmentRunner('${asm.id}')" class="text-xs font-bold text-brand-purple hover:text-brand-dark flex items-center gap-1">
+              <span>เริ่มทำ</span>
+              <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+      `).join('');
+      lucide.createIcons();
+    }
+
+    // --- Render Children List ---
+    function renderChildrenList() {
+      const container = document.getElementById('children-full-list');
+      if (state.children.length === 0) {
+        container.innerHTML = `
+          <div class="col-span-full bg-white p-8 rounded-3xl border border-dashed border-gray-300 text-center space-y-3">
+            <i data-lucide="user-plus" class="w-12 h-12 text-gray-400 mx-auto"></i>
+            <div class="text-base font-semibold text-gray-700">ยังไม่มีข้อมูลเด็กในความดูแล</div>
+            <p class="text-xs text-gray-500">เริ่มต้นโดยการคลิกปุ่มด้านล่างเพื่อเพิ่มข้อมูลเด็กและเริ่มการคัดกรอง</p>
+            <button onclick="openAddChildModal()" class="bg-brand-purple hover:bg-brand-dark text-white px-5 py-2.5 rounded-xl text-xs font-semibold shadow-sm transition">
+              + เพิ่มข้อมูลเด็ก
+            </button>
+          </div>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      container.innerHTML = state.children.map(child => {
+        const age = calculateAge(child.birth_date);
+        return `
+          <div class="bg-white rounded-3xl p-6 border border-gray-200 shadow-sm space-y-4">
+            <div class="flex items-start justify-between">
+              <div class="flex items-center gap-3">
+                <div class="w-14 h-14 rounded-2xl bg-brand-soft text-brand-purple flex items-center justify-center font-bold text-xl">
+                  ${child.nickname ? child.nickname.charAt(0) : child.first_name.charAt(0)}
+                </div>
+                <div>
+                  <h2 class="text-lg font-bold text-gray-800">${child.first_name} ${child.last_name}</h2>
+                  <p class="text-xs text-brand-purple font-semibold">ชื่อเล่น: ${child.nickname || '-'} | อายุ: ${age.text}</p>
+                </div>
+              </div>
+              <span class="bg-purple-100 text-brand-purple text-xs font-bold px-3 py-1 rounded-full">
+                ${child.gender === 'male' ? 'เด็กชาย' : 'เด็กหญิง'}
+              </span>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 text-xs bg-gray-50 p-4 rounded-2xl">
+              <div>
+                <span class="text-gray-400">วันเกิด:</span>
+                <div class="font-semibold text-gray-700 mt-0.5">${child.birth_date}</div>
+              </div>
+              <div>
+                <span class="text-gray-400">ระดับชั้น:</span>
+                <div class="font-semibold text-gray-700 mt-0.5">${child.grade_level || '-'}</div>
+              </div>
+              <div class="col-span-2">
+                <span class="text-gray-400">สถานศึกษา:</span>
+                <div class="font-semibold text-gray-700 mt-0.5">${child.school_name || '-'}</div>
+              </div>
+            </div>
+
+            <!-- Teacher Grants Connection -->
+            <div class="pt-2 border-t border-gray-100 flex flex-wrap items-center justify-between gap-3">
+              <div class="flex items-center gap-1.5 text-xs text-emerald-600 font-medium">
+                <i data-lucide="shield-check" class="w-4 h-4"></i>
+                <span>ผูกสิทธิ์การสังเกตการณ์กับครูประจำชั้นแล้ว</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <button onclick="handleRevokeTeacherPrompt('${child.id}')" class="px-2.5 py-1.5 rounded-lg border border-rose-200 text-[11px] font-semibold text-rose-600 hover:bg-rose-50 transition">
+                  เพิกถอนสิทธิ์ครู
+                </button>
+                <button onclick="startAssessmentForChild('${child.id}')" class="bg-brand-purple hover:bg-brand-dark text-white px-4 py-2 rounded-xl text-xs font-semibold transition">
+                  เริ่มประเมินเด็ก
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+      lucide.createIcons();
+    }
+
+    // --- Render Assessments List ---
+    function renderAssessmentsList() {
+      // Populate Child select
+      const select = document.getElementById('assessment-child-select');
+      select.innerHTML = state.children.map(c => `
+        <option value="${c.id}" ${c.id === state.activeChildId ? 'selected' : ''}>${c.first_name} (${c.nickname || '-'})</option>
+      `).join('');
+
+      filterAssessmentsByChild(state.activeChildId);
+    }
+
+    function filterAssessmentsByChild(childId) {
+      state.activeChildId = childId;
+      const child = state.children.find(c => c.id === childId);
+      const container = document.getElementById('assessments-full-grid');
+
+      if (!child) {
+        container.innerHTML = `<div class="col-span-full text-center text-xs text-gray-400">กรุณาเลือกเด็ก</div>`;
+        return;
+      }
+
+      const age = calculateAge(child.birth_date);
+      const totalMonths = age.years * 12 + age.months;
+
+      container.innerHTML = state.assessments.map(asm => {
+        const isAgeMatch = totalMonths >= asm.min_age_months && totalMonths <= asm.max_age_months;
+        const roleRequiresTeacher = asm.target_roles.includes('teacher') && !asm.target_roles.includes('parent');
+
+        return `
+          <div class="bg-white rounded-3xl p-6 border ${isAgeMatch ? 'border-gray-200' : 'border-gray-200 opacity-60'} shadow-sm flex flex-col justify-between space-y-4">
+            <div class="space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-brand-purple bg-brand-soft px-3 py-1 rounded-full">${asm.code}</span>
+                <span class="text-xs text-gray-500 font-medium flex items-center gap-1">
+                  <i data-lucide="clock" class="w-3.5 h-3.5"></i>
+                  ${asm.estimated_time_minutes} นาที
+                </span>
+              </div>
+              <h2 class="text-base font-bold text-gray-800">${asm.title}</h2>
+              <p class="text-xs text-gray-500 leading-relaxed">${asm.description}</p>
+              
+              <div class="space-y-1.5 pt-2 text-xs">
+                <div class="flex items-center gap-2 text-gray-600">
+                  <i data-lucide="calendar" class="w-4 h-4 text-brand-light"></i>
+                  <span>ช่วงอายุเป้าหมาย: ${(asm.min_age_months/12).toFixed(0)} - ${(asm.max_age_months/12).toFixed(0)} ปี</span>
+                </div>
+                <div class="flex items-center gap-2 ${roleRequiresTeacher ? 'text-amber-700' : 'text-gray-600'}">
+                  <i data-lucide="user" class="w-4 h-4"></i>
+                  <span>ผู้ประเมินหลัก: ${roleRequiresTeacher ? 'คุณครูประจำชั้น / ผู้สอน' : 'ผู้ปกครองหรือครู'}</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="pt-4 border-t border-gray-100 flex items-center justify-between">
+              <span class="text-[11px] font-semibold ${isAgeMatch ? 'text-emerald-600' : 'text-amber-600'}">
+                ${isAgeMatch ? 'ตรงตามเกณฑ์อายุ' : 'อายุไม่ตรงตามเกณฑ์แนะนำ'}
+              </span>
+              <button onclick="openAssessmentRunner('${asm.id}')" class="bg-brand-purple hover:bg-brand-dark text-white px-5 py-2 rounded-xl text-xs font-semibold shadow-sm transition">
+                เริ่มทำแบบประเมิน
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+      lucide.createIcons();
+    }
+
+    function startAssessmentForChild(childId) {
+      state.activeChildId = childId;
+      navigateTo('assessments');
+    }
+
+    // --- Assessment Runner ---
+    async function openAssessmentRunner(assessmentId) {
+      try {
+        const resAsm = await fetch(`/api/assessments/${assessmentId}/version`);
+        const dataAsm = await resAsm.json();
+        state.currentVersion = dataAsm.version;
+        state.currentAssessment = state.assessments.find(a => a.id === assessmentId);
+        state.runnerAnswers = {};
+
+        const child = state.children.find(c => c.id === state.activeChildId) || state.children[0];
+        const age = calculateAge(child.birth_date);
+
+        document.getElementById('runner-assessment-code').innerText = state.currentAssessment.code;
+        document.getElementById('runner-assessment-title').innerText = state.currentAssessment.title;
+        document.getElementById('runner-child-info').innerText = `เด็ก: ${child.first_name} ${child.last_name} (${age.text}) | ผู้ประเมิน: ${state.currentUser ? state.currentUser.full_name : 'Guest'}`;
+
+        renderRunnerQuestions();
+        updateRunnerProgress();
+        navigateTo('runner');
+      } catch (e) {
+        console.error(e);
+        showToast('เกิดข้อผิดพลาดในการโหลดแบบประเมิน', 'error');
+      }
+    }
+
+    function renderRunnerQuestions() {
+      const container = document.getElementById('runner-questions-container');
+      const schema = state.currentVersion.schema_definition;
+
+      container.innerHTML = schema.sections.map(section => {
+        const sectionItems = schema.items.filter(item => section.item_ids.includes(item.id));
+        return `
+          <div class="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-gray-200 space-y-6">
+            <div class="border-b border-gray-100 pb-3">
+              <h2 class="text-base font-bold text-brand-purple">${section.title}</h2>
+              ${section.description ? `<p class="text-xs text-gray-500 mt-1">${section.description}</p>` : ''}
+            </div>
+            <div class="space-y-6">
+              ${sectionItems.map(item => {
+                let optionsHtml = '';
+                if (item.question_type === 'boolean') {
+                  const boolOpts = item.options && item.options.length > 0 ? item.options : [
+                    { value: 1, label: 'ใช่ (ผ่าน / พบพฤติกรรม)' },
+                    { value: 0, label: 'ไม่ใช่ (ไม่ผ่าน / ไม่พบ)' }
+                  ];
+                  optionsHtml = `
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                      ${boolOpts.map(opt => `
+                        <label class="cursor-pointer">
+                          <input type="radio" name="ans_${item.id}" value="${opt.value}" ${state.runnerAnswers[item.id] === opt.value ? 'checked' : ''} onchange="selectAnswer('${item.id}', ${opt.value})" class="peer sr-only">
+                          <div class="p-3.5 rounded-xl border border-gray-200 text-xs font-semibold text-gray-700 bg-white hover:border-brand-light peer-checked:bg-purple-50 peer-checked:border-brand-purple peer-checked:text-brand-purple peer-checked:font-bold transition text-center shadow-sm flex items-center justify-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full ${opt.value === 1 ? 'bg-emerald-500' : 'bg-slate-400'}"></span>
+                            <span>${opt.label}</span>
+                          </div>
+                        </label>
+                      `).join('')}
+                    </div>
+                  `;
+                } else if (item.question_type === 'single_choice') {
+                  const choiceOpts = item.options && item.options.length > 0 ? item.options : [
+                    { value: 0, label: 'ตัวเลือกที่ 1' },
+                    { value: 1, label: 'ตัวเลือกที่ 2' }
+                  ];
+                  optionsHtml = `
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                      ${choiceOpts.map(opt => `
+                        <label class="cursor-pointer">
+                          <input type="radio" name="ans_${item.id}" value="${opt.value}" ${state.runnerAnswers[item.id] === opt.value ? 'checked' : ''} onchange="selectAnswer('${item.id}', ${opt.value})" class="peer sr-only">
+                          <div class="p-3 rounded-xl border border-gray-200 text-xs font-medium text-gray-700 bg-white hover:border-brand-light peer-checked:bg-purple-50 peer-checked:border-brand-purple peer-checked:text-brand-purple peer-checked:font-bold transition flex items-center justify-between px-4 shadow-sm">
+                            <span>${opt.label}</span>
+                            <span class="text-[10px] text-slate-400 font-mono">(${opt.value} คะแนน)</span>
+                          </div>
+                        </label>
+                      `).join('')}
+                    </div>
+                  `;
+                } else {
+                  const scaleOpts = item.options && item.options.length > 0 ? item.options : (schema.scale || []);
+                  optionsHtml = `
+                    <div class="grid grid-cols-2 sm:grid-cols-${Math.min(scaleOpts.length, 5)} gap-2 pt-1">
+                      ${scaleOpts.map(opt => `
+                        <label class="cursor-pointer">
+                          <input type="radio" name="ans_${item.id}" value="${opt.value}" ${state.runnerAnswers[item.id] === opt.value ? 'checked' : ''} onchange="selectAnswer('${item.id}', ${opt.value})" class="peer sr-only">
+                          <div class="p-3 rounded-xl border border-gray-200 text-xs font-medium text-gray-700 bg-white hover:border-brand-light peer-checked:bg-purple-50 peer-checked:border-brand-purple peer-checked:text-brand-purple peer-checked:font-bold transition text-center shadow-sm">
+                            ${opt.label}
+                          </div>
+                        </label>
+                      `).join('')}
+                    </div>
+                  `;
+                }
+                return `
+                  <div class="p-4 rounded-2xl bg-gray-50 border border-gray-200/80 space-y-3" id="q-box-${item.id}">
+                    <div class="flex items-start justify-between gap-2">
+                      <div class="flex items-start gap-2">
+                        <span class="font-bold text-brand-purple text-sm">${item.number}.</span>
+                        <span class="font-semibold text-gray-800 text-sm leading-relaxed">${item.text}</span>
+                      </div>
+                      <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${item.question_type === 'boolean' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : item.question_type === 'single_choice' ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-purple-50 text-brand-purple border border-purple-200'} flex-shrink-0">
+                        ${item.question_type === 'boolean' ? 'ใช่/ไม่ใช่' : item.question_type === 'single_choice' ? 'เลือก 1 คำตอบ' : 'สเกลคะแนน'}
+                      </span>
+                    </div>
+                    ${optionsHtml}
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function selectAnswer(itemId, val) {
+      state.runnerAnswers[itemId] = val;
+      updateRunnerProgress();
+    }
+
+    function updateRunnerProgress() {
+      const total = state.currentVersion.schema_definition.items.length;
+      const answered = Object.keys(state.runnerAnswers).length;
+      const percent = Math.round((answered / total) * 100);
+
+      document.getElementById('runner-progress-text').innerText = `${answered} / ${total} ข้อ (${percent}%)`;
+      document.getElementById('runner-progress-bar').style.width = `${percent}%`;
+
+      const validMsg = document.getElementById('runner-validation-msg');
+      if (answered === total) validMsg.classList.add('hidden');
+    }
+
+    async function submitAssessment() {
+      const total = state.currentVersion.schema_definition.items.length;
+      const answered = Object.keys(state.runnerAnswers).length;
+
+      if (answered < total) {
+        document.getElementById('runner-validation-msg').classList.remove('hidden');
+        showToast(`ท่านตอบคำถามไปแล้ว ${answered} จาก ${total} ข้อ กรุณาตอบให้ครบทุกข้อก่อนส่งแบบประเมิน`, 'warning');
+        return;
+      }
+
+      const consentCheck = document.getElementById('consent-checkbox');
+      if (!consentCheck.checked) {
+        showToast('กรุณาทำเครื่องหมายยินยอมรับทราบประกาศความเป็นส่วนตัวก่อนส่งแบบประเมิน', 'warning');
+        return;
+      }
+
+      const child = state.children.find(c => c.id === state.activeChildId) || state.children[0];
+      const age = calculateAge(child.birth_date);
+
+      const payload = {
+        assessment_version_id: state.currentVersion.id,
+        child_id: child.id,
+        respondent_id: state.currentUser ? state.currentUser.id : 'usr_guest',
+        respondent_role: state.currentUser ? state.currentUser.role : 'parent',
+        assessment_date: new Date().toISOString().split('T')[0],
+        calculated_age_years: age.years,
+        calculated_age_months: age.months,
+        calculated_age_display: age.text,
+        raw_answers: state.runnerAnswers,
+        privacy_consent_accepted: true,
+        privacy_consent_version: '1.0-TH-2026',
+      };
+
+      try {
+        const res = await fetch('/api/responses/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        showResultView(data.result);
+      } catch (e) {
+        console.error(e);
+        showToast('เกิดข้อผิดพลาดในการส่งผลประเมิน กรุณาลองใหม่อีกครั้ง', 'error');
+      }
+    }
+
+    function showResultView(result) {
+      document.getElementById('result-title').innerText = result.assessment_title;
+      document.getElementById('result-total-score').innerText = result.total_raw_score;
+      document.getElementById('result-max-score').innerText = `คะแนนเต็ม ${result.max_possible_raw_score} คะแนน`;
+      document.getElementById('result-status-badge').innerText = result.overall_status_label;
+
+      const domainsContainer = document.getElementById('result-domains-container');
+      domainsContainer.innerHTML = result.domain_results.map(d => `
+        <div class="bg-gray-50 rounded-2xl p-4 border border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <div class="text-sm font-bold text-gray-800">${d.title_th}</div>
+            <div class="text-xs text-gray-500 mt-0.5">คะแนนดิบ: <span class="font-bold text-brand-purple">${d.raw_score}</span> / ${d.max_score} คะแนน</div>
+          </div>
+          <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-100 text-brand-purple text-xs font-bold">
+            <span>${d.status_badge}</span>
+          </div>
+        </div>
+      `).join('');
+
+      const recList = document.getElementById('result-recommendations-list');
+      recList.innerHTML = result.domain_results.flatMap(d => d.recommendations).map(r => `
+        <li>${r}</li>
+      `).join('');
+
+      navigateTo('result');
+    }
+
+    async function saveDraft() {
+      const child = state.children.find(c => c.id === state.activeChildId) || state.children[0];
+      const age = calculateAge(child.birth_date);
+
+      const payload = {
+        assessment_version_id: state.currentVersion.id,
+        child_id: child.id,
+        respondent_id: state.currentUser ? state.currentUser.id : 'usr_guest',
+        respondent_role: state.currentUser ? state.currentUser.role : 'parent',
+        assessment_date: new Date().toISOString().split('T')[0],
+        calculated_age_years: age.years,
+        calculated_age_months: age.months,
+        calculated_age_display: age.text,
+        raw_answers: state.runnerAnswers,
+      };
+
+      try {
+        await fetch('/api/responses/draft', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        showToast('บันทึกร่างคำตอบเรียบร้อยแล้ว ท่านสามารถกลับมาทำต่อได้ตลอดเวลา', 'success');
+      } catch (e) {
+        showToast('บันทึกร่างคำตอบลงในอุปกรณ์เรียบร้อย', 'info');
+      }
+    }
+
+    function confirmExitAssessment() {
+      if (confirm('คุณต้องการออกจากหน้าทำแบบประเมินหรือไม่? (คำตอบที่ยังไม่บันทึกอาจสูญหาย)')) {
+        navigateTo('assessments');
+      }
+    }
+
+    // --- History View ---
+    async function loadChildHistory(childId) {
+      const select = document.getElementById('history-child-select');
+      const container = document.getElementById('history-list-container');
+
+      if (!state.children || state.children.length === 0) {
+        if (select) select.innerHTML = '<option value="">ยังไม่มีข้อมูลเด็ก</option>';
+        if (container) {
+          container.innerHTML = `
+            <div class="bg-white p-8 rounded-3xl border border-dashed border-gray-300 text-center space-y-2">
+              <i data-lucide="clipboard-list" class="w-10 h-10 text-gray-400 mx-auto"></i>
+              <div class="text-sm font-semibold text-gray-700">ยังไม่มีประวัติการประเมิน</div>
+              <p class="text-xs text-gray-400">เมื่อเพิ่มข้อมูลเด็กและทำแบบประเมินเสร็จสิ้น ผลจะแสดงขึ้นที่นี่</p>
+            </div>
+          `;
+          lucide.createIcons();
+        }
+        return;
+      }
+
+      state.activeChildId = childId || state.children[0].id;
+      select.innerHTML = state.children.map(c => `
+        <option value="${c.id}" ${c.id === state.activeChildId ? 'selected' : ''}>${c.first_name} (${c.nickname || '-'})</option>
+      `).join('');
+
+      try {
+        const res = await fetch(`/api/children/${state.activeChildId}/history`);
+        const data = await res.json();
+        const container = document.getElementById('history-list-container');
+
+        if (!data.history || data.history.length === 0) {
+          container.innerHTML = `
+            <div class="bg-white p-8 rounded-3xl border border-dashed border-gray-300 text-center space-y-2">
+              <i data-lucide="calendar-x" class="w-8 h-8 text-gray-400 mx-auto"></i>
+              <div class="text-sm font-semibold text-gray-700">ยังไม่มีประวัติการประเมินสำหรับเด็กคนนี้</div>
+              <p class="text-xs text-gray-400">เมื่อทำแบบประเมินเสร็จสิ้น ผลจะแสดงในตารางนี้</p>
+            </div>
+          `;
+        } else {
+          container.innerHTML = data.history.map(item => `
+            <div class="bg-white rounded-2xl p-5 border border-gray-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div class="space-y-1">
+                <div class="flex items-center gap-2">
+                  <span class="text-xs font-bold text-brand-purple bg-brand-soft px-2.5 py-0.5 rounded">${item.result.assessment_code}</span>
+                  <span class="text-xs text-gray-500">${item.response.assessment_date}</span>
+                </div>
+                <h3 class="font-bold text-gray-800 text-sm">${item.result.assessment_title}</h3>
+                <p class="text-xs text-gray-500">อายุ ณ วันประเมิน: ${item.response.calculated_age_display} | ผู้ตอบ: ${item.response.respondent_role === 'teacher' ? 'คุณครู' : 'ผู้ปกครอง'}</p>
+              </div>
+              <div class="flex items-center gap-3">
+                <div class="text-right">
+                  <div class="text-xs text-gray-400">คะแนนดิบรวม</div>
+                  <div class="text-lg font-bold text-brand-purple">${item.result.total_raw_score} / ${item.result.max_possible_raw_score}</div>
+                </div>
+                <button onclick='showResultView(${JSON.stringify(item.result)})' class="px-4 py-2 rounded-xl bg-brand-soft text-brand-purple hover:bg-brand-purple hover:text-white text-xs font-semibold transition">
+                  ดูผลสรุป
+                </button>
+              </div>
+            </div>
+          `).join('');
+        }
+        lucide.createIcons();
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function viewChildHistory(childId) {
+      state.activeChildId = childId;
+      navigateTo('history');
+    }
+
+    // --- Modals Control ---
+    function openAddChildModal() { document.getElementById('add-child-modal').classList.remove('hidden'); }
+    function closeAddChildModal() { document.getElementById('add-child-modal').classList.add('hidden'); }
+    function openOnboardingModal() { document.getElementById('onboarding-modal').classList.remove('hidden'); }
+    function closeOnboardingModal() { document.getElementById('onboarding-modal').classList.add('hidden'); }
+    // Role Specific Login Tab Switching
+    let selectedUserLoginRole = 'parent';
+
+    function switchLoginRoleTab(role) {
+      selectedUserLoginRole = role;
+      const tabParent = document.getElementById('tab-login-parent');
+      const tabTeacher = document.getElementById('tab-login-teacher');
+      const banner = document.getElementById('login-role-desc');
+      const quickText = document.getElementById('quick-demo-login-text');
+      const emailInput = document.getElementById('login-email');
+      const submitLabel = document.getElementById('login-submit-label');
+
+      if (role === 'parent') {
+        if (tabParent) tabParent.className = 'py-2.5 px-3 rounded-xl font-bold transition flex items-center justify-center gap-1.5 bg-white text-brand-purple shadow-sm';
+        if (tabTeacher) tabTeacher.className = 'py-2.5 px-3 rounded-xl font-semibold transition flex items-center justify-center gap-1.5 text-gray-600 hover:text-gray-900';
+        if (banner) banner.innerHTML = '<strong>โหมดผู้ปกครอง:</strong> จัดการข้อมูลเด็ก ติดตามประวัติพัฒนาการ และมอบสิทธิ์การประเมินให้คุณครู';
+        if (emailInput) {
+          emailInput.value = '';
+          emailInput.placeholder = 'กรุณากรอกอีเมลผู้ปกครอง เช่น parent@example.com';
+        }
+        if (submitLabel) submitLabel.innerText = 'เข้าสู่ระบบในบทบาทผู้ปกครอง';
+      } else {
+        if (tabTeacher) tabTeacher.className = 'py-2.5 px-3 rounded-xl font-bold transition flex items-center justify-center gap-1.5 bg-white text-brand-purple shadow-sm';
+        if (tabParent) tabParent.className = 'py-2.5 px-3 rounded-xl font-semibold transition flex items-center justify-center gap-1.5 text-gray-600 hover:text-gray-900';
+        if (banner) banner.innerHTML = '<strong>โหมดคุณครู:</strong> ทำแบบประเมิน KUS-SI 5 ชุดสำหรับเด็กในชั้นเรียนที่ได้รับมอบหมาย';
+        if (emailInput) {
+          emailInput.value = '';
+          emailInput.placeholder = 'กรุณากรอกอีเมลคุณครู เช่น teacher@school.ac.th';
+        }
+        if (submitLabel) submitLabel.innerText = 'เข้าสู่ระบบในบทบาทคุณครู';
+      }
+    }
+
+    function confirmUserLogout() {
+      document.getElementById('user-logout-modal').classList.remove('hidden');
+      lucide.createIcons();
+    }
+    function closeUserLogoutModal() {
+      document.getElementById('user-logout-modal').classList.add('hidden');
+    }
+    async function proceedUserLogout() {
+      state.currentUser = null;
+      localStorage.removeItem('growwise_user_email');
+      try {
+        await fetch('/api/auth/logout', { method: 'POST' });
+      } catch (e) {}
+      closeUserLogoutModal();
+      navigateTo('login');
+      showToast('ท่านได้ออกจากระบบ GrowWise แล้ว', 'info');
+    }
+    function closeGuestModal() { document.getElementById('guest-modal').classList.add('hidden'); }
+    function proceedGuestMode() {
+      closeGuestModal();
+      switchRole('guest');
+      navigateTo('home');
+      showToast('เข้าใช้งานในโหมด Guest (ไม่สมัครสมาชิก) ผลการประเมินจะเก็บเฉพาะบนอุปกรณ์นี้', 'info');
+    }
+    function openLoginModal() { navigateTo('login'); }
+    function closeLoginModal() { navigateTo('home'); }
+    function openRegisterModal() { document.getElementById('register-modal').classList.remove('hidden'); }
+    function closeRegisterModal() { document.getElementById('register-modal').classList.add('hidden'); }
+    function openForgotModal() { document.getElementById('forgot-modal').classList.remove('hidden'); }
+    function closeForgotModal() { document.getElementById('forgot-modal').classList.add('hidden'); }
+
+    async function handleLoginSubmit(e) {
+      if (e && e.preventDefault) e.preventDefault();
+      const email = document.getElementById('login-email').value.trim();
+      if (!email) {
+        showToast('กรุณากรอกอีเมลผู้ใช้งาน', 'error');
+        return;
+      }
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        });
+        const data = await res.json();
+        state.currentUser = data.user;
+        localStorage.setItem('growwise_user_email', data.user.email);
+        updateUserHeader();
+        await fetchChildren();
+        await fetchAssessments();
+        navigateTo('home');
+        showToast(`ยินดีต้อนรับ ${data.user.full_name} (${data.user.role === 'parent' ? 'ผู้ปกครอง' : 'คุณครู'})`, 'success');
+      } catch (err) {
+        console.error(err);
+        showToast('เกิดข้อผิดพลาดในการเข้าสู่ระบบ กรุณาลองใหม่อีกครั้ง', 'error');
+      }
+    }
+
+    async function handleRegisterSubmit(e) {
+      e.preventDefault();
+      const payload = {
+        role: document.getElementById('reg-role').value,
+        full_name: document.getElementById('reg-name').value,
+        email: document.getElementById('reg-email').value,
+        phone_number: document.getElementById('reg-phone').value,
+      };
+      try {
+        const res = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        state.currentUser = data.user;
+        closeRegisterModal();
+        updateUserHeader();
+        showToast(`สมัครสมาชิกสำเร็จ! ยินดีต้อนรับ ${data.user.full_name}`, 'success');
+        navigateTo('home');
+      } catch (err) {
+        showToast('เกิดข้อผิดพลาดในการสมัครสมาชิก', 'error');
+      }
+    }
+
+    async function handleForgotSubmit(e) {
+      e.preventDefault();
+      const email = document.getElementById('forgot-email').value;
+      const res = await fetch('/api/auth/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      const data = await res.json();
+      closeForgotModal();
+      showToast(data.message || 'ส่งลิงก์รีเซ็ตรหัสผ่านไปยังอีเมลของท่านแล้ว', 'info');
+    }
+
+    function simulateGoogleLogin() {
+      showToast('เชื่อมต่อบริการ Google สำเร็จ กำลังเข้าสู่ระบบ GrowWise...', 'success');
+      state.currentUser = {
+        id: 'usr_google_' + Date.now(),
+        full_name: 'ผู้ใช้งาน Google',
+        email: 'user@gmail.com',
+        role: selectedUserLoginRole
+      };
+      localStorage.setItem('growwise_user_email', state.currentUser.email);
+      updateUserHeader();
+      navigateTo('home');
+    }
+
+    function handleRevokeTeacherPrompt(childId) {
+      if (confirm('คุณต้องการเพิกถอนสิทธิ์คุณครูจากการเข้าถึงข้อมูลของเด็กคนนี้หรือไม่?')) {
+        showToast('เพิกถอนสิทธิ์คุณครูเรียบร้อยแล้ว', 'info');
+      }
+    }
+
+    async function handleSaveChild(event) {
+      event.preventDefault();
+      const payload = {
+        first_name: document.getElementById('new-child-firstname').value,
+        last_name: document.getElementById('new-child-lastname').value,
+        nickname: document.getElementById('new-child-nickname').value,
+        gender: document.getElementById('new-child-gender').value,
+        birth_date: document.getElementById('new-child-birthdate').value,
+        school_name: document.getElementById('new-child-school').value,
+        grade_level: document.getElementById('new-child-grade').value,
+      };
+
+      try {
+        const res = await fetch('/api/children', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        closeAddChildModal();
+        await fetchChildren();
+        renderHome();
+        showToast(`เพิ่มข้อมูลเด็ก ${data.child.first_name} เรียบร้อยแล้ว`, 'success');
+      } catch (e) {
+        console.error(e);
+        showToast('เกิดข้อผิดพลาดในการบันทึกข้อมูลเด็ก', 'error');
+      }
+    }
+
+    // Run on startup
+    window.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>

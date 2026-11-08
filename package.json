@@ -1,0 +1,25 @@
+{
+  "name": "grow-wise-platform",
+  "version": "1.0.0",
+  "description": "GrowWise Platform — แพลตฟอร์มคัดกรองและส่งเสริมพัฒนาการเด็กเบื้องต้น",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node tests/test-suite.js",
+    "test:journeys": "node tests/verify-journeys.js",
+    "test:rules": "node tests/test-criteria-rules.js"
+  },
+  "keywords": [
+    "child-development",
+    "screening",
+    "kus-si",
+    "adhd",
+    "ld",
+    "autism",
+    "dspm",
+    "pediatric-health"
+  ],
+  "author": "GrowWise Healthcare Team",
+  "license": "UNLICENSED",
+  "private": true
+}

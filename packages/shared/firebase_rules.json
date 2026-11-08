@@ -1,0 +1,30 @@
+{
+  "rules": {
+    "profiles": {
+      "$uid": {
+        ".read": "auth != null && (auth.uid === $uid || root.child('profiles').child(auth.uid).child('role').val() === 'admin' || root.child('profiles').child(auth.uid).child('role').val() === 'super_admin')",
+        ".write": "auth != null && (auth.uid === $uid || root.child('profiles').child(auth.uid).child('role').val() === 'super_admin')"
+      }
+    },
+    "children": {
+      "$childId": {
+        ".read": "auth != null && (data.child('created_by').val() === auth.uid || root.child('child_access_grants').child($childId).child(auth.uid).child('status').val() === 'active' || root.child('profiles').child(auth.uid).child('role').val() === 'admin' || root.child('profiles').child(auth.uid).child('role').val() === 'super_admin' || root.child('profiles').child(auth.uid).child('role').val() === 'specialist')",
+        ".write": "auth != null && (data.child('created_by').val() === auth.uid || !data.exists() || root.child('profiles').child(auth.uid).child('role').val() === 'super_admin')"
+      }
+    },
+    "assessments": {
+      ".read": "auth != null",
+      ".write": "auth != null && (root.child('profiles').child(auth.uid).child('role').val() === 'admin' || root.child('profiles').child(auth.uid).child('role').val() === 'super_admin')"
+    },
+    "assessment_responses": {
+      "$responseId": {
+        ".read": "auth != null && (data.child('respondent_id').val() === auth.uid || root.child('profiles').child(auth.uid).child('role').val() === 'admin' || root.child('profiles').child(auth.uid).child('role').val() === 'super_admin' || root.child('profiles').child(auth.uid).child('role').val() === 'specialist')",
+        ".write": "auth != null && (!data.exists() || data.child('respondent_id').val() === auth.uid)"
+      }
+    },
+    "audit_logs": {
+      ".read": "auth != null && (root.child('profiles').child(auth.uid).child('role').val() === 'admin' || root.child('profiles').child(auth.uid).child('role').val() === 'super_admin')",
+      ".write": "auth != null"
+    }
+  }
+}
