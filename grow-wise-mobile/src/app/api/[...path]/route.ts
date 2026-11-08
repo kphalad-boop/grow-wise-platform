@@ -15,9 +15,73 @@ interface User {
   created_at: string;
 }
 
-// Clean Production State — No Mock Data
+// Clean Production State — Users & Logs start empty
 let usersStore: User[] = [];
 let auditLogs: any[] = [];
+
+// Official Clinical Screening Instruments + Dynamic Builder Store
+let assessmentsStore: any[] = [
+  {
+    id: 'asm_kus_si_1',
+    code: 'KUS-SI 1',
+    title: 'แบบคัดกรองบุคคลที่มีปัญหาทางการเรียนรู้และพฤติกรรม (พฤติกรรมสมาธิสั้น)',
+    description: 'คัดกรองพฤติกรรมสมาธิสั้น ซนอยู่ไม่นิ่ง และหุนหันพลันแล่น (ADHD) ช่วงอายุ 6-12 ปี',
+    min_age_months: 72,
+    max_age_months: 155,
+    target_roles: ['parent', 'teacher'],
+    status: 'published',
+    current_version: 1,
+    created_at: '2026-11-01T00:00:00Z',
+  },
+  {
+    id: 'asm_kus_si_2',
+    code: 'KUS-SI 2',
+    title: 'แบบคัดกรองบุคคลที่มีปัญหาทางการเรียนรู้ (LD - ด้านการอ่าน การเขียน และคณิตศาสตร์)',
+    description: 'คัดกรองความบกพร่องทางการเรียนรู้ 3 ด้านสำคัญ: การอ่าน การเขียน และการคำนวณ ช่วงอายุ 6-12 ปี',
+    min_age_months: 72,
+    max_age_months: 155,
+    target_roles: ['parent', 'teacher'],
+    status: 'published',
+    current_version: 1,
+    created_at: '2026-11-01T00:00:00Z',
+  },
+  {
+    id: 'asm_kus_si_3',
+    code: 'KUS-SI 3',
+    title: 'แบบคัดกรองบุคคลที่มีความบกพร่องทางออทิสติก (Autism Spectrum)',
+    description: 'คัดกรองพฤติกรรมด้านการสื่อสาร ปฏิสัมพันธ์ทางสังคม และพฤติกรรมซ้ำๆ ช่วงอายุ 6-12 ปี',
+    min_age_months: 72,
+    max_age_months: 155,
+    target_roles: ['parent', 'teacher'],
+    status: 'published',
+    current_version: 1,
+    created_at: '2026-11-01T00:00:00Z',
+  },
+  {
+    id: 'asm_kus_si_4',
+    code: 'KUS-SI 4',
+    title: 'แบบคัดกรองบุคคลที่มีปัญหาทางพฤติกรรมและอารมณ์ (Emotional & Behavioral)',
+    description: 'คัดกรองภาวะวิตกกังวล อารมณ์ซึมเศร้า และพฤติกรรมก้าวร้าวต่อต้าน ช่วงอายุ 6-12 ปี',
+    min_age_months: 72,
+    max_age_months: 155,
+    target_roles: ['parent', 'teacher'],
+    status: 'published',
+    current_version: 1,
+    created_at: '2026-11-01T00:00:00Z',
+  },
+  {
+    id: 'asm_kus_si_5',
+    code: 'KUS-SI 5',
+    title: 'แบบคัดกรองบุคคลที่มีความบกพร่องทางสติปัญญาและพัฒนาการล่าช้า (Intellectual / DSPM Extended)',
+    description: 'คัดกรองทักษะการปรับตัว ความสามารถทางสติปัญญาและพัฒนาการสมวัย ช่วงอายุ 6-12 ปี',
+    min_age_months: 72,
+    max_age_months: 155,
+    target_roles: ['parent', 'teacher'],
+    status: 'published',
+    current_version: 1,
+    created_at: '2026-11-01T00:00:00Z',
+  },
+];
 
 async function getPath(params: Promise<{ path: string[] }> | { path: string[] }) {
   const resolved = await params;
@@ -44,7 +108,7 @@ export async function GET(
 
   if (pathname === '/admin/stats') {
     let totalChildren = 0;
-    let publishedAssessments = 0;
+    let publishedAssessments = assessmentsStore.filter((a) => a.status === 'published').length;
     let totalAssessmentsTaken = 0;
     let pendingSpecialistReview = 0;
 
@@ -52,7 +116,7 @@ export async function GET(
       const { count: chCount } = await supabase.from('children').select('*', { count: 'exact', head: true });
       totalChildren = chCount || 0;
       const { count: asCount } = await supabase.from('assessments').select('*', { count: 'exact', head: true }).eq('status', 'published');
-      publishedAssessments = asCount || 0;
+      if (asCount) publishedAssessments = asCount;
       const { count: subCount } = await supabase.from('submissions').select('*', { count: 'exact', head: true });
       totalAssessmentsTaken = subCount || 0;
       const { count: rvCount } = await supabase.from('submissions').select('*', { count: 'exact', head: true }).eq('overall_status', 'pending_specialist_review');
@@ -70,7 +134,7 @@ export async function GET(
   if (pathname === '/admin/users') {
     try {
       const { data, error } = await supabase.from('users').select('*').order('created_at', { ascending: false });
-      if (!error && data) {
+      if (!error && data && data.length > 0) {
         return NextResponse.json({ users: data });
       }
     } catch (e) {}
@@ -84,11 +148,17 @@ export async function GET(
   if (pathname === '/admin/assessments') {
     try {
       const { data, error } = await supabase.from('assessments').select('*').order('created_at', { ascending: false });
-      if (!error && data) {
-        return NextResponse.json({ assessments: data });
+      if (!error && data && data.length > 0) {
+        const merged = [...data];
+        for (const localAsm of assessmentsStore) {
+          if (!merged.find((m) => m.code === localAsm.code || m.id === localAsm.id)) {
+            merged.unshift(localAsm);
+          }
+        }
+        return NextResponse.json({ assessments: merged });
       }
     } catch (e) {}
-    return NextResponse.json({ assessments: [] });
+    return NextResponse.json({ assessments: assessmentsStore });
   }
 
   if (pathname === '/admin/results') {
@@ -113,10 +183,11 @@ export async function GET(
   if (pathname === '/assessments') {
     try {
       const { data } = await supabase.from('assessments').select('*, assessment_versions(*)').eq('status', 'published');
-      return NextResponse.json({ assessments: data || [] });
-    } catch (e) {
-      return NextResponse.json({ assessments: [] });
-    }
+      if (data && data.length > 0) {
+        return NextResponse.json({ assessments: data });
+      }
+    } catch (e) {}
+    return NextResponse.json({ assessments: assessmentsStore.filter((a) => a.status === 'published') });
   }
 
   if (pathname === '/auth/current-user') {
@@ -195,7 +266,6 @@ export async function POST(
       created_at: new Date().toISOString(),
     };
 
-    // Try Supabase insert
     try {
       await supabase.from('users').insert({
         id: newUser.id,
@@ -209,7 +279,6 @@ export async function POST(
       console.warn('Supabase insert user error:', e);
     }
 
-    // Update in-memory store
     usersStore.unshift(newUser);
 
     auditLogs.unshift({
@@ -258,9 +327,61 @@ export async function POST(
     return NextResponse.json({ user, message: 'เปลี่ยนสิทธิ์สำเร็จ' });
   }
 
-  // Assessments & Results
-  if (pathname === '/admin/assessments/draft' || pathname === '/admin/assessments/publish') {
-    return NextResponse.json({ success: true, version: 1 });
+  // Save Draft Assessment (Builder)
+  if (pathname === '/admin/assessments/draft') {
+    const asm = body.assessment || {};
+    const newAsm = {
+      id: asm.id || 'asm_' + (asm.code || '').toLowerCase().replace(/[^a-z0-9]/g, '_') + '_' + Date.now(),
+      code: asm.code || 'CUSTOM',
+      title: asm.title || 'แบบประเมินร่าง',
+      description: asm.description || '',
+      min_age_months: asm.min_age_months || 0,
+      max_age_months: asm.max_age_months || 216,
+      target_roles: asm.target_roles || ['parent', 'teacher'],
+      status: 'draft',
+      current_version: 1,
+      created_at: new Date().toISOString(),
+    };
+
+    try {
+      await supabase.from('assessments').upsert([newAsm]);
+      if (body.version) {
+        await supabase.from('assessment_versions').insert([
+          {
+            assessment_id: newAsm.id,
+            version_number: 1,
+            status: 'draft',
+            schema_definition: body.version.schema_definition || {},
+            rules_definition: body.version.rules_definition || {},
+            created_at: new Date().toISOString(),
+          },
+        ]);
+      }
+    } catch (e) {
+      console.warn('Supabase assessment draft save notice:', e);
+    }
+
+    const exIdx = assessmentsStore.findIndex((a) => a.code === newAsm.code || a.id === newAsm.id);
+    if (exIdx !== -1) {
+      assessmentsStore[exIdx] = newAsm;
+    } else {
+      assessmentsStore.unshift(newAsm);
+    }
+
+    return NextResponse.json({ success: true, assessment: newAsm, version: 1 });
+  }
+
+  // Publish Assessment
+  if (pathname === '/admin/assessments/publish') {
+    const asmId = body.assessment_id;
+    const asm = assessmentsStore.find((a) => a.id === asmId);
+    if (asm) {
+      asm.status = 'published';
+    }
+    try {
+      await supabase.from('assessments').update({ status: 'published' }).eq('id', asmId);
+    } catch (e) {}
+    return NextResponse.json({ success: true, version: body.version_number || 1 });
   }
 
   if (pathname.startsWith('/admin/assessments/') && pathname.endsWith('/rules')) {

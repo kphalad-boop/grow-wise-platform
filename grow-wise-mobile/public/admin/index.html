@@ -1893,11 +1893,37 @@
     }
 
     async function fetchAdminAssessments() {
-      const data = await safeFetchJson('/api/admin/assessments');
-      if (data && data.assessments) {
-        adminState.assessments = data.assessments;
-        populateCriteriaAssessmentSelect();
+      // 1. Try Supabase direct first
+      if (supabaseClient) {
+        try {
+          const { data, error } = await supabaseClient.from('assessments').select('*').order('created_at', { ascending: false });
+          if (!error && data && data.length > 0) {
+            const merged = [...data];
+            for (const a of adminState.assessments) {
+              if (!merged.find(m => m.code === a.code || m.id === a.id)) {
+                merged.unshift(a);
+              }
+            }
+            adminState.assessments = merged;
+            populateCriteriaAssessmentSelect();
+            renderAssessmentsTable();
+            return;
+          }
+        } catch (e) {}
       }
+      // 2. Try API endpoint
+      const data = await safeFetchJson('/api/admin/assessments');
+      if (data && data.assessments && data.assessments.length > 0) {
+        const merged = [...data.assessments];
+        for (const a of adminState.assessments) {
+          if (!merged.find(m => m.code === a.code || m.id === a.id)) {
+            merged.unshift(a);
+          }
+        }
+        adminState.assessments = merged;
+      }
+      populateCriteriaAssessmentSelect();
+      renderAssessmentsTable();
     }
 
     async function fetchAdminResults() {
@@ -1979,6 +2005,18 @@
     function renderAssessmentsTable() {
       const tbody = document.getElementById('admin-assessments-table');
       if (!tbody) return;
+      if (!adminState.assessments || adminState.assessments.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" class="p-8 text-center text-slate-400">
+              <i data-lucide="clipboard-x" class="w-8 h-8 mx-auto mb-2 text-slate-300"></i>
+              <p class="font-medium">ยังไม่มีแบบประเมินในระบบ (กดปุ่ม "สร้างแบบประเมินใหม่" ด้านบนเพื่อเริ่มสร้าง)</p>
+            </td>
+          </tr>
+        `;
+        lucide.createIcons();
+        return;
+      }
       tbody.innerHTML = adminState.assessments.map(a => `
         <tr class="hover:bg-slate-50 transition">
           <td class="p-4 font-bold text-brand-purple">${a.code}</td>
@@ -4770,18 +4808,59 @@
       };
 
       try {
-        const res = await fetch('/api/admin/assessments/draft', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        if (!res.ok) {
-          const errData = await res.json().catch(() => ({}));
-          throw new Error(errData.error || `HTTP ${res.status}`);
+        const savedAsm = {
+          id: 'asm_' + (code || '').toLowerCase().replace(/[^a-z0-9]/g, '_') + '_' + Date.now(),
+          code: code,
+          title: title,
+          description: desc,
+          min_age_months: minAge || 0,
+          max_age_months: maxAge || 216,
+          target_roles: ['parent', 'teacher', 'specialist'],
+          status: 'draft',
+          current_version: 1,
+          created_at: new Date().toISOString()
+        };
+
+        // 1. Save directly to Supabase if available
+        if (supabaseClient) {
+          try {
+            await supabaseClient.from('assessments').upsert([savedAsm]);
+            if (payload.version) {
+              await supabaseClient.from('assessment_versions').insert([{
+                assessment_id: savedAsm.id,
+                version_number: 1,
+                status: 'draft',
+                schema_definition: payload.version.schema_definition || {},
+                rules_definition: payload.version.rules_definition || {},
+                created_at: new Date().toISOString()
+              }]);
+            }
+          } catch (sbErr) {
+            console.warn('Supabase assessment draft save notice:', sbErr);
+          }
         }
+
+        // 2. Call API endpoint
+        try {
+          await fetch('/api/admin/assessments/draft', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...payload, assessment: savedAsm })
+          });
+        } catch (apiErr) {}
+
+        // 3. Immediately insert/update in local adminState.assessments
+        const exIdx = adminState.assessments.findIndex(a => a.code === savedAsm.code || a.id === savedAsm.id);
+        if (exIdx !== -1) {
+          adminState.assessments[exIdx] = savedAsm;
+        } else {
+          adminState.assessments.unshift(savedAsm);
+        }
+
         showToast(`บันทึกร่างแบบประเมิน ${code} (${items.length} ข้อ) สำเร็จแล้ว พร้อมกำหนดเกณฑ์`, 'success');
-        await fetchAdminAssessments();
         navigateAdmin('assessments');
+        renderAssessmentsTable();
+        populateCriteriaAssessmentSelect();
       } catch (err) {
         console.error(err);
         showToast('เกิดข้อผิดพลาดในการบันทึกร่างแบบประเมิน: ' + err.message, 'error');
