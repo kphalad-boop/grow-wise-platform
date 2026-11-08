@@ -220,22 +220,22 @@
             <label class="flex items-center gap-1.5 text-gray-500">
               <input type="checkbox" checked class="rounded text-brand-purple"> จดจำการเข้าสู่ระบบ
             </label>
-            <button type="button" onclick="openForgotModal()" class="text-brand-purple hover:underline">ลืมรหัสผ่าน?</button>
           </div>
           <button type="submit" id="btn-login-submit" class="w-full bg-brand-purple hover:bg-brand-dark text-white py-3 rounded-xl font-bold shadow-md transition flex items-center justify-center gap-2 text-sm">
             <i data-lucide="log-in" class="w-4 h-4"></i>
             <span id="login-submit-label">เข้าสู่ระบบในบทบาทผู้ปกครอง</span>
           </button>
-          <button type="button" onclick="simulateGoogleLogin()" class="w-full bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 py-2.5 rounded-xl font-medium flex items-center justify-center gap-2 transition">
-            <i data-lucide="globe" class="w-4 h-4 text-rose-500"></i>
-            <span>เข้าสู่ระบบด้วย Google</span>
+          <button type="button" onclick="openRegisterModal()" class="w-full bg-white border border-brand-purple text-brand-purple hover:bg-purple-50 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 transition shadow-sm">
+            <i data-lucide="user-plus" class="w-4 h-4"></i>
+            <span>สมัครสมาชิกใหม่</span>
           </button>
         </form>
 
-        <!-- Guest Mode & Register Actions -->
+        <!-- Guest Mode & Forgot Password Actions -->
         <div class="pt-3 border-t border-gray-100 flex items-center justify-between text-xs">
-          <button type="button" onclick="openRegisterModal()" class="text-brand-purple hover:underline font-semibold">
-            สมัครสมาชิกใหม่
+          <button type="button" onclick="openForgotModal()" class="text-brand-purple hover:underline font-semibold flex items-center gap-1">
+            <i data-lucide="key-round" class="w-3.5 h-3.5"></i>
+            <span>ลืมรหัสผ่าน</span>
           </button>
           <button type="button" onclick="proceedGuestMode()" class="text-gray-500 hover:text-gray-800 font-medium flex items-center gap-1">
             <span>ใช้งานโดยไม่สมัคร (Guest)</span>
