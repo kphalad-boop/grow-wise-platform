@@ -12,10 +12,9 @@ export function MobileContainer({
   showBottomNavPadding = true,
 }: MobileContainerProps) {
   return (
-    <div className="min-h-screen bg-slate-100 flex justify-center items-start sm:py-6">
-      {/* Mobile viewport frame: centered max-w-md on desktop, full width on mobile */}
+    <div className="min-h-screen bg-[#FAF9FD] w-full flex justify-center items-start">
       <div
-        className={`w-full max-w-md bg-white min-h-screen sm:min-h-[844px] sm:rounded-[2.5rem] sm:shadow-2xl sm:border sm:border-slate-200/80 overflow-x-hidden flex flex-col relative ${
+        className={`w-full max-w-5xl bg-white min-h-screen overflow-x-hidden flex flex-col relative ${
           showBottomNavPadding ? 'pb-24' : ''
         } ${className}`}
       >

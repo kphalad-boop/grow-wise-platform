@@ -1,12 +1,20 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   typescript: {
-    // Allows production builds to successfully complete even with type mismatches
     ignoreBuildErrors: true,
   },
   eslint: {
-    // Allows production builds to successfully complete even with ESLint errors
     ignoreDuringBuilds: true,
+  },
+  async rewrites() {
+    return {
+      beforeFiles: [
+        { source: '/', destination: '/user.html' },
+        { source: '/welcome', destination: '/user.html' },
+        { source: '/admin', destination: '/admin.html' },
+        { source: '/admin/:path*', destination: '/admin.html' },
+      ],
+    };
   },
 };
 
