@@ -353,6 +353,12 @@ export async function POST(
   // Auth Login
   if (pathname === '/auth/login') {
     const email = body.email || 'user@growwise.internal';
+    try {
+      const { data } = await supabase.from('users').select('*').ilike('email', email).maybeSingle();
+      if (data) {
+        return NextResponse.json({ user: data });
+      }
+    } catch (e) {}
     return NextResponse.json({
       user: {
         id: 'usr_' + Date.now(),

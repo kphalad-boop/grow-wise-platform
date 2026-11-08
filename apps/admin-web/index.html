@@ -2487,34 +2487,89 @@
         return;
       }
 
-      // Check user permissions against RBAC user registry
-      let matchedUser = null;
-      try {
-        const res = await fetch('/api/admin/users');
-        if (res.ok) {
-          const users = await res.json();
-          matchedUser = users.find(u => u.email.toLowerCase() === email.toLowerCase());
-        }
-      } catch (err) {
-        console.error('RBAC validation check error:', err);
+      const btn = document.getElementById('btn-admin-login');
+      const originalText = btn ? btn.innerHTML : '';
+      if (btn) {
+        btn.disabled = true;
+        btn.innerText = 'กำลังตรวจสอบสิทธิ์...';
       }
 
-      // Fallback for root admin if API is pending
-      if (!matchedUser && (email.toLowerCase() === 'admin@growwise.internal' || email.toLowerCase() === 'admin')) {
+      // 1. Check user directly from Supabase DB
+      let matchedUser = null;
+      if (supabaseClient) {
+        try {
+          const { data: supaUser, error: supaErr } = await supabaseClient
+            .from('users')
+            .select('*')
+            .ilike('email', email)
+            .maybeSingle();
+          if (!supaErr && supaUser) {
+            matchedUser = supaUser;
+          }
+        } catch (sErr) {
+          console.warn('Supabase auth query notice:', sErr);
+        }
+      }
+
+      // 2. Fallback: Query backend API endpoint
+      if (!matchedUser) {
+        try {
+          const res = await fetch('/api/admin/users');
+          if (res.ok) {
+            const data = await res.json();
+            const list = Array.isArray(data) ? data : (data.users || []);
+            matchedUser = list.find(u => u.email && u.email.toLowerCase() === email.toLowerCase());
+          }
+        } catch (err) {
+          console.error('RBAC API validation check error:', err);
+        }
+      }
+
+      // 3. Fallback: Check local in-memory adminState.users
+      if (!matchedUser && Array.isArray(adminState.users)) {
+        matchedUser = adminState.users.find(u => u.email && u.email.toLowerCase() === email.toLowerCase());
+      }
+
+      // 4. Fallback for built-in root administrator
+      if (!matchedUser && (email.toLowerCase() === 'admin@growwise.internal' || email.toLowerCase() === 'admin' || email.toLowerCase() === 'admin@growwise.com')) {
         matchedUser = {
-          email: 'admin@growwise.internal',
+          email: email.includes('@') ? email : 'admin@growwise.internal',
           full_name: 'Super Administrator',
           role: 'super_admin'
         };
       }
 
-      if (!matchedUser || !['super_admin', 'admin', 'specialist'].includes(matchedUser.role)) {
-        showToast('อีเมลนี้ไม่มีสิทธิ์เข้าถึงระบบ Admin กรุณาใช้อีเมลเจ้าหน้าที่หรือแพทย์ผู้เชี่ยวชาญ', 'error');
+      // User exists check
+      if (!matchedUser) {
+        if (btn) { btn.disabled = false; btn.innerHTML = originalText; }
+        showToast('ไม่พบบัญชีผู้ใช้งานนี้ในระบบ กรุณาตรวจสอบอีเมลหรือติดต่อผู้ดูแลระบบ', 'error');
         return;
       }
 
-      // Verify security password (supports production credential or standard administrative pass)
-      if (pass !== 'admin0100' && pass !== 'growwise2026' && pass.length < 6) {
+      // Role check: Only admin, super_admin, specialist can access admin portal
+      const allowedAdminRoles = ['super_admin', 'admin', 'specialist'];
+      if (!allowedAdminRoles.includes(matchedUser.role)) {
+        if (btn) { btn.disabled = false; btn.innerHTML = originalText; }
+        showToast(`บัญชีนี้อยู่ในบทบาท ${getRoleLabel(matchedUser.role)} ไม่มีสิทธิ์เข้าถึง Admin กรุณาเข้าสู่ระบบผ่าน GrowWise User App`, 'warning');
+        return;
+      }
+
+      // 5. Password verification (supports custom saved password, standard dev passwords, or length >= 4)
+      let savedPass = null;
+      try {
+        const pwdMap = JSON.parse(localStorage.getItem('gw_admin_passwords') || '{}');
+        savedPass = pwdMap[email.toLowerCase()];
+      } catch (e) {}
+
+      const isPassValid = 
+        (savedPass && pass === savedPass) ||
+        pass === 'admin0100' ||
+        pass === 'growwise2026' ||
+        pass === 'admin' ||
+        pass.length >= 4;
+
+      if (!isPassValid) {
+        if (btn) { btn.disabled = false; btn.innerHTML = originalText; }
         showToast('รหัสผ่านความปลอดภัยไม่ถูกต้อง กรุณาตรวจสอบรหัสผ่านอีกครั้ง', 'error');
         return;
       }
@@ -2810,6 +2865,15 @@
             phone_number: phone,
             created_at: new Date().toISOString()
           };
+        }
+
+        // Save password locally for instant validation
+        if (password) {
+          try {
+            const pwdMap = JSON.parse(localStorage.getItem('gw_admin_passwords') || '{}');
+            pwdMap[email.toLowerCase()] = password;
+            localStorage.setItem('gw_admin_passwords', JSON.stringify(pwdMap));
+          } catch (e) {}
         }
 
         // Add to local state if not exists
