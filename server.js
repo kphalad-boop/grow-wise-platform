@@ -8,6 +8,25 @@ const url = require('url');
 const fs = require('fs');
 const path = require('path');
 
+// Load .env if present
+const envPath = path.join(__dirname, '.env');
+if (fs.existsSync(envPath)) {
+  const envContent = fs.readFileSync(envPath, 'utf8');
+  envContent.split('\n').forEach(line => {
+    const trimmed = line.trim();
+    if (trimmed && !trimmed.startsWith('#')) {
+      const idx = trimmed.indexOf('=');
+      if (idx !== -1) {
+        const key = trimmed.slice(0, idx).trim();
+        const val = trimmed.slice(idx + 1).trim();
+        if (!process.env[key]) {
+          process.env[key] = val;
+        }
+      }
+    }
+  });
+}
+
 // Load Shared Domain & Mock Data Store
 // Import compiled or direct JS definitions
 const { sharedDataStore } = require('./packages/shared/dist/mock-store');
@@ -50,6 +69,20 @@ async function handleApiRequest(req, res, pathname, query) {
       'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     });
     res.end();
+    return true;
+  }
+
+  // --- System Status API ---
+  if (pathname === '/api/system/status' && req.method === 'GET') {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || null;
+    const projectRef = supabaseUrl ? supabaseUrl.replace('https://', '').split('.')[0] : null;
+    sendJson(res, 200, {
+      backend: process.env.DATA_BACKEND || 'supabase',
+      supabaseUrl,
+      supabaseConnected: !!supabaseUrl,
+      projectRef,
+      hasAnonKey: !!(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY)
+    });
     return true;
   }
 

@@ -252,9 +252,13 @@
         </span>
       </div>
       <div class="flex items-center gap-3 text-xs text-slate-500">
-        <div class="flex items-center gap-2 text-xs text-slate-600 hidden xl:flex">
-          <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-          <span class="font-medium">ระบบพร้อมปฏิบัติการ (Production Mode)</span>
+        <div id="topbar-database-status" class="flex items-center gap-2 text-xs bg-emerald-50 text-emerald-800 px-3 py-1.5 rounded-xl border border-emerald-200 shadow-xs hidden sm:flex">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span class="font-medium flex items-center gap-1.5">
+            <span class="font-bold">ฐานข้อมูล:</span>
+            <span>Supabase Live</span>
+            <span class="text-[10px] font-mono bg-emerald-100 text-emerald-900 px-1.5 py-0.5 rounded">qjocagwfzazcgzqnyhux</span>
+          </span>
         </div>
         <button onclick="confirmAdminLogout()" class="px-3 py-1.5 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold flex items-center gap-1.5 transition shadow-sm" title="ออกจากระบบ GrowWise Admin">
           <i data-lucide="log-out" class="w-4 h-4"></i>
