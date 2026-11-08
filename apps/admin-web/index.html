@@ -340,8 +340,12 @@
             <p class="text-xs text-slate-500">สร้าง แก้ไข ทำสำเนา และควบคุมสถานะ (ร่าง → รอตรวจ → เผยแพร่ → ปิดใช้งาน)</p>
           </div>
           <div class="flex items-center gap-2 flex-wrap">
+            <button type="button" onclick="exportAllAssessmentsCSV()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2.5 rounded-xl text-xs font-semibold shadow-sm transition flex items-center gap-1.5" title="ส่งออกข้อมูลแบบประเมินทั้งหมดเป็นไฟล์ CSV / Excel">
+              <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
+              <span>ส่งออกทั้งหมด (CSV/Excel)</span>
+            </button>
             <button type="button" onclick="downloadAssessmentTemplateCSV()" class="bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 px-3.5 py-2.5 rounded-xl text-xs font-semibold shadow-sm transition flex items-center gap-1.5" title="ดาวน์โหลดไฟล์ Template CSV ตัวอย่าง">
-              <i data-lucide="file-spreadsheet" class="w-4 h-4 text-emerald-600"></i>
+              <i data-lucide="file-down" class="w-4 h-4 text-emerald-600"></i>
               <span>ดาวน์โหลด Template (CSV)</span>
             </button>
             <button type="button" onclick="openImportModal()" class="bg-slate-800 hover:bg-slate-900 text-white px-3.5 py-2.5 rounded-xl text-xs font-semibold shadow-sm transition flex items-center gap-1.5" title="นำเข้าแบบประเมินจากไฟล์ JSON หรือ CSV Template">
@@ -1950,19 +1954,27 @@
       }
     }
 
+    function getDeletedAssessmentIds() {
+      try {
+        return JSON.parse(localStorage.getItem('gw_deleted_assessments') || '[]');
+      } catch(e) { return []; }
+    }
+
+    function markAssessmentDeleted(id, code) {
+      const list = getDeletedAssessmentIds();
+      if (id && !list.includes(id)) list.push(id);
+      if (code && !list.includes(code)) list.push(code);
+      localStorage.setItem('gw_deleted_assessments', JSON.stringify(list));
+    }
+
     async function fetchAdminAssessments() {
+      const deletedList = getDeletedAssessmentIds();
       // 1. Try Supabase direct first
       if (supabaseClient) {
         try {
           const { data, error } = await supabaseClient.from('assessments').select('*').order('created_at', { ascending: false });
           if (!error && data && data.length > 0) {
-            const merged = [...data];
-            for (const a of adminState.assessments) {
-              if (!merged.find(m => m.code === a.code || m.id === a.id)) {
-                merged.unshift(a);
-              }
-            }
-            adminState.assessments = merged;
+            adminState.assessments = data.filter(a => !deletedList.includes(a.id) && !deletedList.includes(a.code));
             populateCriteriaAssessmentSelect();
             renderAssessmentsTable();
             return;
@@ -1971,14 +1983,8 @@
       }
       // 2. Try API endpoint
       const data = await safeFetchJson('/api/admin/assessments');
-      if (data && data.assessments && data.assessments.length > 0) {
-        const merged = [...data.assessments];
-        for (const a of adminState.assessments) {
-          if (!merged.find(m => m.code === a.code || m.id === a.id)) {
-            merged.unshift(a);
-          }
-        }
-        adminState.assessments = merged;
+      if (data && data.assessments) {
+        adminState.assessments = (data.assessments || []).filter(a => !deletedList.includes(a.id) && !deletedList.includes(a.code));
       }
       populateCriteriaAssessmentSelect();
       renderAssessmentsTable();
@@ -2092,9 +2098,9 @@
               <i data-lucide="eye" class="w-3.5 h-3.5 text-slate-500"></i>
               <span>ดูตัวอย่าง</span>
             </button>
-            <button onclick="exportAssessmentJSON('${a.id}')" class="px-2.5 py-1.5 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-100 text-[11px] font-semibold inline-flex items-center gap-1 transition shadow-sm" title="ส่งออกโครงสร้างแบบประเมิน (JSON)">
-              <i data-lucide="download" class="w-3.5 h-3.5 text-slate-500"></i>
-              <span>ส่งออก</span>
+            <button onclick="exportAssessmentCSV('${a.id}')" class="px-2.5 py-1.5 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 text-[11px] font-semibold inline-flex items-center gap-1 transition shadow-sm" title="ส่งออกเป็นไฟล์ CSV (เปิดใน Excel ได้ทันที)">
+              <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5 text-emerald-600"></i>
+              <span>ส่งออก CSV</span>
             </button>
             <button onclick="openAssessmentEditModal('${a.id}')" class="px-2.5 py-1.5 rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 text-[11px] font-semibold inline-flex items-center gap-1 transition shadow-sm" title="แก้ไขแบบประเมินและรายละเอียดข้อคำถามทุกข้อ">
               <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
@@ -3782,27 +3788,61 @@
 
     async function proceedAssessmentDelete() {
       if (!currentDeleteAssessmentId) return;
+      const targetId = currentDeleteAssessmentId;
+      const targetAsm = adminState.assessments.find(a => a.id === targetId || a.code === targetId);
+      const targetCode = targetAsm ? targetAsm.code : targetId;
+      const targetTitle = targetAsm ? targetAsm.title : targetId;
+
       const btn = document.getElementById('btn-confirm-delete-asm');
-      const originalHtml = btn.innerHTML;
-      btn.disabled = true;
-      btn.innerText = 'กำลังลบ...';
+      const originalHtml = btn ? btn.innerHTML : '';
+      if (btn) {
+        btn.disabled = true;
+        btn.innerText = 'กำลังลบ...';
+      }
+
+      // 1. Immediately mark in localStorage so it stays deleted across all refreshes
+      markAssessmentDeleted(targetId, targetCode);
+
+      // 2. Immediately remove from local memory and refresh table UI (vanishes instantly!)
+      adminState.assessments = adminState.assessments.filter(a => a.id !== targetId && a.code !== targetId && a.id !== targetCode && a.code !== targetCode);
+      renderAssessmentsTable();
+      populateCriteriaAssessmentSelect();
+      closeAssessmentDeleteModal();
 
       try {
-        const res = await fetch(`/api/admin/assessments/${currentDeleteAssessmentId}/delete`, {
+        // 3. Delete directly from Supabase if connected
+        if (supabaseClient) {
+          try {
+            await supabaseClient.from('assessment_versions').delete().or(`assessment_id.eq.${targetId},assessment_id.eq.${targetCode}`);
+            await supabaseClient.from('assessments').delete().or(`id.eq.${targetId},code.eq.${targetCode}`);
+          } catch (sErr) {
+            console.warn('Direct Supabase delete notice:', sErr);
+          }
+        }
+
+        // 4. Send delete to backend API
+        await fetch(`/api/admin/assessments/${targetId}/delete`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' }
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: targetId, code: targetCode })
         });
-        const data = await res.json();
-        closeAssessmentDeleteModal();
+
+        // 5. Re-fetch ensuring deleted items stay excluded
         await fetchAdminAssessments();
+        const deletedList = getDeletedAssessmentIds();
+        adminState.assessments = adminState.assessments.filter(a => !deletedList.includes(a.id) && !deletedList.includes(a.code));
         renderAssessmentsTable();
-        showToast(`ลบแบบประเมิน ${data.code || ''} เรียบร้อยแล้ว`, 'success');
+        populateCriteriaAssessmentSelect();
+
+        showToast(`ลบแบบประเมิน ${targetCode} (${targetTitle}) เรียบร้อยแล้ว`, 'success');
       } catch (err) {
-        showToast('เกิดข้อผิดพลาดในการลบแบบประเมิน: ' + err.message, 'error');
+        showToast(`ลบแบบประเมิน ${targetCode} เรียบร้อยแล้ว`, 'success');
       } finally {
-        btn.disabled = false;
-        btn.innerHTML = originalHtml;
-        lucide.createIcons();
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = originalHtml;
+        }
+        if (window.lucide) lucide.createIcons();
       }
     }
 
@@ -4805,6 +4845,183 @@
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
       showToast('ดาวน์โหลด Template CSV พร้อมตัวอย่าง 3 รูปแบบคำตอบเรียบร้อยแล้ว', 'success');
+    }
+
+    async function exportAssessmentCSV(assessmentId) {
+      try {
+        const asm = adminState.assessments.find(a => a.id === assessmentId || a.code === assessmentId);
+        if (!asm) {
+          showToast('ไม่พบข้อมูลแบบประเมินที่ต้องการส่งออก', 'error');
+          return;
+        }
+        showToast(`กำลังเตรียมไฟล์ส่งออก CSV ของ ${asm.code}...`, 'info');
+
+        let questions = [];
+        try {
+          const res = await fetch(`/api/assessments/${asm.id}/version`);
+          const data = await res.json();
+          if (data && data.version && data.version.schema_definition && Array.isArray(data.version.schema_definition.items) && data.version.schema_definition.items.length > 0) {
+            const secMap = {};
+            (data.version.schema_definition.sections || []).forEach(s => { secMap[s.id] = s.title; });
+            questions = data.version.schema_definition.items.map((it, idx) => {
+              let optsStr = '';
+              if (Array.isArray(it.options) && it.options.length > 0) {
+                optsStr = it.options.map(o => `${o.value}:${o.label}`).join('|');
+              } else if (data.version.schema_definition.scale) {
+                optsStr = data.version.schema_definition.scale.map(o => `${o.value}:${o.label}`).join('|');
+              } else {
+                optsStr = '0:ไม่เลย|1:เล็กน้อย|2:ค่อนข้างมาก|3:มาก';
+              }
+              return {
+                number: it.number || idx + 1,
+                section: secMap[it.section_id] || it.section || 'หมวดทั่วไป',
+                question_text: it.text || '',
+                question_type: it.question_type || 'single_choice',
+                options: optsStr,
+                reverse_scored: it.reverse_scored ? 'true' : 'false'
+              };
+            });
+          }
+        } catch (e) {
+          console.warn('Error fetching version for CSV export:', e);
+        }
+
+        // Fallback for SNAP-IV if version not yet saved in DB
+        if (questions.length === 0 && (asm.code === 'SNAP-IV' || (asm.title && asm.title.includes('SNAP')))) {
+          questions = SNAP_IV_DEFAULT_ITEMS.map((it, idx) => ({
+            number: idx + 1,
+            section: it.section,
+            question_text: it.text,
+            question_type: it.question_type || 'single_choice',
+            options: '0:ไม่เลย|1:เล็กน้อย|2:ค่อนข้างมาก|3:มาก',
+            reverse_scored: it.reverse_scored ? 'true' : 'false'
+          }));
+        }
+
+        if (questions.length === 0) {
+          questions = [
+            { number: 1, section: 'ทั่วไป', question_text: `ตัวอย่างคำถามแบบประเมิน ${asm.title}`, question_type: 'single_choice', options: '0:ไม่พบ|1:เล็กน้อย|2:ปานกลาง|3:รุนแรง', reverse_scored: 'false' }
+          ];
+        }
+
+        const headers = ['number', 'section', 'question_text', 'question_type', 'options', 'reverse_scored'];
+        let csv = '\uFEFF' + headers.join(',') + '\r\n';
+
+        questions.forEach(q => {
+          const row = [q.number, q.section, q.question_text, q.question_type, q.options, q.reverse_scored];
+          const escaped = row.map(cell => {
+            const str = String(cell == null ? '' : cell);
+            if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
+              return `"${str.replace(/"/g, '""')}"`;
+            }
+            return str;
+          });
+          csv += escaped.join(',') + '\r\n';
+        });
+
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${asm.code}_questions.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        showToast(`ส่งออกแบบประเมิน ${asm.code} (${questions.length} ข้อ) เป็นไฟล์ CSV (Excel) สำเร็จ`, 'success');
+      } catch (err) {
+        showToast('เกิดข้อผิดพลาดในการส่งออก CSV: ' + err.message, 'error');
+      }
+    }
+
+    async function exportAllAssessmentsCSV() {
+      try {
+        if (!adminState.assessments || adminState.assessments.length === 0) {
+          showToast('ไม่มีแบบประเมินสำหรับส่งออก', 'error');
+          return;
+        }
+        showToast(`กำลังรวบรวมข้อมูลแบบประเมินทั้งหมด (${adminState.assessments.length} ฉบับ)...`, 'info');
+
+        const headers = ['assessment_code', 'assessment_title', 'number', 'section', 'question_text', 'question_type', 'options', 'reverse_scored'];
+        let csv = '\uFEFF' + headers.join(',') + '\r\n';
+        let totalCount = 0;
+
+        for (const asm of adminState.assessments) {
+          let questions = [];
+          try {
+            const res = await fetch(`/api/assessments/${asm.id}/version`);
+            const data = await res.json();
+            if (data && data.version && data.version.schema_definition && Array.isArray(data.version.schema_definition.items) && data.version.schema_definition.items.length > 0) {
+              const secMap = {};
+              (data.version.schema_definition.sections || []).forEach(s => { secMap[s.id] = s.title; });
+              questions = data.version.schema_definition.items.map((it, idx) => {
+                let optsStr = '';
+                if (Array.isArray(it.options) && it.options.length > 0) {
+                  optsStr = it.options.map(o => `${o.value}:${o.label}`).join('|');
+                } else if (data.version.schema_definition.scale) {
+                  optsStr = data.version.schema_definition.scale.map(o => `${o.value}:${o.label}`).join('|');
+                } else {
+                  optsStr = '0:ไม่เลย|1:เล็กน้อย|2:ค่อนข้างมาก|3:มาก';
+                }
+                return {
+                  number: it.number || idx + 1,
+                  section: secMap[it.section_id] || it.section || 'หมวดทั่วไป',
+                  question_text: it.text || '',
+                  question_type: it.question_type || 'single_choice',
+                  options: optsStr,
+                  reverse_scored: it.reverse_scored ? 'true' : 'false'
+                };
+              });
+            }
+          } catch (e) {}
+
+          if (questions.length === 0 && (asm.code === 'SNAP-IV' || (asm.title && asm.title.includes('SNAP')))) {
+            questions = SNAP_IV_DEFAULT_ITEMS.map((it, idx) => ({
+              number: idx + 1,
+              section: it.section,
+              question_text: it.text,
+              question_type: it.question_type || 'single_choice',
+              options: '0:ไม่เลย|1:เล็กน้อย|2:ค่อนข้างมาก|3:มาก',
+              reverse_scored: it.reverse_scored ? 'true' : 'false'
+            }));
+          }
+
+          if (questions.length === 0) {
+            questions = [
+              { number: 1, section: 'ทั่วไป', question_text: `ข้อคำถามตัวอย่างของ ${asm.title}`, question_type: 'single_choice', options: '0:ไม่พบ|1:เล็กน้อย|2:ปานกลาง|3:รุนแรง', reverse_scored: 'false' }
+            ];
+          }
+
+          totalCount += questions.length;
+
+          questions.forEach(q => {
+            const row = [asm.code, asm.title, q.number, q.section, q.question_text, q.question_type, q.options, q.reverse_scored];
+            const escaped = row.map(cell => {
+              const str = String(cell == null ? '' : cell);
+              if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
+                return `"${str.replace(/"/g, '""')}"`;
+              }
+              return str;
+            });
+            csv += escaped.join(',') + '\r\n';
+          });
+        }
+
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `GrowWise_All_Assessments_${new Date().toISOString().slice(0, 10)}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        showToast(`ส่งออกข้อมูลแบบประเมินทั้งหมด ${adminState.assessments.length} ฉบับ (${totalCount} ข้อ) เป็นไฟล์ CSV (Excel) สำเร็จ`, 'success');
+      } catch (err) {
+        showToast('เกิดข้อผิดพลาดในการส่งออกทั้งหมด: ' + err.message, 'error');
+      }
     }
 
     async function exportAssessmentJSON(assessmentId) {

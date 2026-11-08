@@ -18,6 +18,7 @@ interface User {
 // Clean Production State — Users & Logs start empty
 let usersStore: User[] = [];
 let auditLogs: any[] = [];
+let deletedAssessmentIds = new Set<string>();
 
 // Official Clinical Screening Instruments + Dynamic Builder Store
 const SNAP_IV_SCHEMA = {
@@ -265,16 +266,18 @@ export async function GET(
     try {
       const { data, error } = await supabase.from('assessments').select('*').order('created_at', { ascending: false });
       if (!error && data && data.length > 0) {
-        const merged = [...data];
+        const activeData = data.filter((a) => !deletedAssessmentIds.has(a.id) && !deletedAssessmentIds.has(a.code));
+        const merged = [...activeData];
         for (const localAsm of assessmentsStore) {
-          if (!merged.find((m) => m.code === localAsm.code || m.id === localAsm.id)) {
+          if (!deletedAssessmentIds.has(localAsm.id) && !deletedAssessmentIds.has(localAsm.code) && !merged.find((m) => m.code === localAsm.code || m.id === localAsm.id)) {
             merged.unshift(localAsm);
           }
         }
         return NextResponse.json({ assessments: merged });
       }
     } catch (e) {}
-    return NextResponse.json({ assessments: assessmentsStore });
+    const activeLocal = assessmentsStore.filter((a) => !deletedAssessmentIds.has(a.id) && !deletedAssessmentIds.has(a.code));
+    return NextResponse.json({ assessments: activeLocal });
   }
 
   if (pathname === '/admin/results') {
@@ -441,6 +444,36 @@ export async function POST(
       await supabase.from('users').delete().eq('id', userId);
     } catch (e) {}
     return NextResponse.json({ success: true, message: 'ลบผู้ใช้งานสำเร็จ' });
+  }
+
+  // Delete Assessment
+  if (pathname.startsWith('/admin/assessments/') && (pathname.endsWith('/delete') || request.method === 'DELETE')) {
+    const parts = pathname.split('/');
+    const asmId = parts[3];
+    const asmCode = body.code || '';
+
+    deletedAssessmentIds.add(asmId);
+    if (asmCode) deletedAssessmentIds.add(asmCode);
+
+    assessmentsStore = assessmentsStore.filter((a) => a.id !== asmId && a.code !== asmId && a.id !== asmCode && a.code !== asmCode);
+    delete assessmentVersionsStore[asmId];
+    if (asmCode) delete assessmentVersionsStore[asmCode];
+
+    try {
+      await supabase.from('assessment_versions').delete().or(`assessment_id.eq.${asmId},assessment_id.eq.${asmCode || asmId}`);
+      await supabase.from('assessments').delete().or(`id.eq.${asmId},code.eq.${asmId},code.eq.${asmCode || asmId}`);
+    } catch (e) {
+      console.warn('Supabase assessment delete notice:', e);
+    }
+
+    auditLogs.unshift({
+      id: 'log_' + Date.now(),
+      action: 'ASSESSMENT_DELETED',
+      details: `ลบแบบประเมิน: ${asmCode || asmId}`,
+      timestamp: new Date().toISOString(),
+    });
+
+    return NextResponse.json({ success: true, deleted_id: asmId, message: 'ลบแบบประเมินสำเร็จ' });
   }
 
   // Update Role
